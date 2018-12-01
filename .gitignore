@@ -1,0 +1,8 @@
+.idea
+node_modules
+*.log
+.DS_Store
+.env
+coverage
+.nyc_output
+.circleci

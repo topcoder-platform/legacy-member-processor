@@ -1,0 +1,10 @@
+version: '3'
+services:
+  legacy-member-processor:
+    image: legacy-member-processor:latest
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    env_file:
+      api.env
+    command: run start:docker  
