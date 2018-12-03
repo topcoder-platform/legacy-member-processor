@@ -7,4 +7,5 @@ services:
       dockerfile: docker/Dockerfile
     env_file:
       api.env
-    command: run start:docker  
+    network_mode: "host"   
+    #command: run start:docker  
