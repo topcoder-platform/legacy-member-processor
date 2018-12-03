@@ -48,7 +48,7 @@ jobs:
             sudo pip install docker-compose
             sudo chmod +x /usr/local/bin/ecs-cli
       - run:
-          name: Executing build.
+          name: Executing build .
           command: |
              chmod +x build.sh
              ./build.sh PROD
