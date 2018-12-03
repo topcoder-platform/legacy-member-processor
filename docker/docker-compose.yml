@@ -6,6 +6,6 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
     env_file:
-      api.env
+      - api.env
     network_mode: "host"   
     #command: run start:docker  
