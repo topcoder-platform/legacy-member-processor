@@ -42,4 +42,4 @@ RUN echo "sqlexec 2021/tcp" >> /etc/services
 
 WORKDIR /home/informix/legacy-member-processor
 
-ENTRYPOINT [ "npm" ]
+ENTRYPOINT [ "npm","run","start:docker" ]
