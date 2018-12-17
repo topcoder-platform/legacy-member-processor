@@ -41,8 +41,4 @@ RUN echo "sqlexec 2021/tcp" >> /etc/services
 
 WORKDIR /home/informix/legacy-member-processor
 
-# ENTRYPOINT [ "npm","run","start:docker" ]
-
-# Install the dependencies from package.json
-RUN npm install
-CMD npm start
+ENTRYPOINT [ "npm","run","start:docker" ]
