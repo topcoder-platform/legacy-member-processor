@@ -13,9 +13,16 @@ const healthcheck = require('topcoder-healthcheck-dropin')
 
 // create consumer
 const options = { connectionString: config.KAFKA_URL }
+
+logger.info("Starting the application........")
+logger.info("KAFKA_URL - " + config.KAFKA_URL)
+logger.info("KAFKA_CLIENT_CERT - " + config.KAFKA_CLIENT_CERT)
+logger.info("KAFKA_CLIENT_CERT_KEY - " + config.KAFKA_CLIENT_CERT_KEY)
+
 if (config.KAFKA_CLIENT_CERT && config.KAFKA_CLIENT_CERT_KEY) {
   options.ssl = { cert: config.KAFKA_CLIENT_CERT, key: config.KAFKA_CLIENT_CERT_KEY }
 }
+logger.info(options)
 const consumer = new Kafka.SimpleConsumer(options)
 
 // data handler
@@ -83,11 +90,14 @@ consumer
   .init()
   // consume configured topics
   .then(() => {
+    logger.info('Initilized.......')
     healthcheck.init([check])
-
+    logger.info('Adding topics.......')
     const topics = [config.CREATE_PROFILE_TOPIC, config.UPDATE_PROFILE_TOPIC,
       config.CREATE_TRAIT_TOPIC, config.UPDATE_TRAIT_TOPIC,
       config.UPDATE_PHOTO_TOPIC, config.EMAIL_CHANGE_VERIFICATION_TOPIC]
+    logger.info(topics)
+    logger.info('Kick Start.......')
     _.each(topics, (tp) => consumer.subscribe(tp, { time: Kafka.LATEST_OFFSET }, dataHandler))
   })
   .catch((err) => logger.error(err))
