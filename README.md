@@ -102,6 +102,5 @@ docker-compose up
 
 5. When you are running the application for the first time, It will take some time initially to download the image and install the dependencies
 
-
 ## Verification
 Refer to the verification document under legacy-member-processor/docs/verification.docx
