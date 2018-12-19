@@ -1,6 +1,6 @@
 FROM ibmcom/informix-innovator-c:latest
 
-ARG servername=oltp01-new
+ARG servername=informix
 
 RUN mkdir /home/informix/legacy-member-processor
 COPY . /home/informix/legacy-member-processor
@@ -9,7 +9,7 @@ USER root
 WORKDIR /home/informix
 
 RUN apt-get -qq update && apt-get -qq install -y \
-   wget gcc g++ make xz-utils python2.7 git
+   wget gcc g++ make xz-utils python2.7 git curl
 
 RUN wget -q -O node8.tar.xz https://nodejs.org/dist/v8.11.3/node-v8.11.3-linux-x64.tar.xz \
    && tar xfJ node8.tar.xz && rm -rf node8.tar.xz
