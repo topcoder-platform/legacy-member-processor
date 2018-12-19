@@ -389,6 +389,7 @@ createOrUpdateTrait.schema = {
       userId: Joi.number().integer().min(1).required(),
       traitId: Joi.string().required(),
       traits: Joi.object().keys({
+        traitId: Joi.string(),
         data: Joi.array().length(1).required()
       })
     }).unknown(true).required()

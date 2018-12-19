@@ -1,6 +1,6 @@
 FROM ibmcom/informix-innovator-c:latest
 
-ARG servername=informix
+ARG servername=oltp01-new
 
 RUN mkdir /home/informix/legacy-member-processor
 COPY . /home/informix/legacy-member-processor
@@ -41,4 +41,8 @@ RUN echo "sqlexec 2021/tcp" >> /etc/services
 
 WORKDIR /home/informix/legacy-member-processor
 
-ENTRYPOINT [ "npm","run","start:docker" ]
+RUN npm install --unsafe-perm
+
+WORKDIR /home/informix/legacy-member-processor
+
+ENTRYPOINT [ "node", "src/app.js" ]
