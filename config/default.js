@@ -3,7 +3,7 @@
  */
 
 module.exports = {
-  DISABLE_LOGGING: process.env.DISABLE_LOGGING || false, // If true, logging will be disabled
+  DISABLE_LOGGING: false, // If true, logging will be disabled
   LOG_LEVEL: process.env.LOG_LEVEL || 'debug',
 
   KAFKA_URL: process.env.KAFKA_URL,
