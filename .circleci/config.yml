@@ -27,7 +27,7 @@ jobs:
       - deploy:
           name : Running Masterscript
           command: |
-            git clone --branch master https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
+            git clone --branch v1.1 https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
             cp ./../buildscript/master_deploy.sh .
             ./master_deploy.sh -d ECS -e DEV -t $CIRCLE_BUILD_NUM -s legacy-member-processor
   "build-prod":
@@ -55,9 +55,9 @@ jobs:
       - deploy:
           name : Running Masterscript
           command: |
-            git clone --branch master https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
+            git clone --branch v1.1 https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
             cp ./../buildscript/master_deploy.sh .
-            ./master_deploy.sh -d ECS -e PROD -t $CIRCLE_BUILD_NUM -s legacy-member-processor-prod
+            ./master_deploy.sh -d ECS -e PROD -t $CIRCLE_BUILD_NUM -s legacy-member-processor
 workflows:
   version: 2
   build:
@@ -70,4 +70,4 @@ workflows:
       - "build-prod":
           filters:
             branches:
-              only: master1
+              only: master
