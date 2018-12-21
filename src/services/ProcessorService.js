@@ -325,11 +325,25 @@ updateProfile.schema = createProfile.schema
 function updateUserBasicInfoTrait (data, connection) {
   const status = _.get(data, 'status') === 'ACTIVE' ? 'A' : 'I'
 
+  logger.info(" data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+  logger.info(data);
+  logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+
+  logger.info(" status ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+  logger.info(status);
+  logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+  
   const updateUserQuery = 'update user set ' +
                           "first_name = '" + data.firstName + "', " +
                           "last_name = '" + data.lastName + "', " +
                           "status = '" + status + "' " +
                           'where user_id = ' + _.get(data, 'userId')
+
+
+  logger.info(" updateUserQuery ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+  logger.info(updateUserQuery);
+  logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+
   // Execute the update user query
   connection.querySync(updateUserQuery)
 
@@ -344,7 +358,6 @@ function updateUserBasicInfoTrait (data, connection) {
     "select country_code code from informixoltp:country where upper(country_name) = upper('" + data.country + "')")
 
   if (countryCode !== undefined && countryCode !== null && countryCode.length > 0) {
-    console.log()
     updateUserAddresses(data, connection, countryCode[0].code)
   } else { // update the addresses without setting the country code
     updateUserAddresses(data, connection)
