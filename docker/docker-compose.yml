@@ -8,4 +8,7 @@ services:
     env_file:
       - api.env
     network_mode: "host"   
-    #command: run start:docker  
+    #entrypoint: npm run test
+    #entrypoint: npm run cov
+    entrypoint: npm run e2e
+    #entrypoint: npm run cov-e2e
