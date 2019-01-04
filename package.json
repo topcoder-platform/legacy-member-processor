@@ -7,22 +7,32 @@
     "start:docker": "npm install --unsafe-perm && node src/app.js",
     "start": "node src/app.js",
     "lint": "standard",
-    "lint:fix": "standard --fix"
+    "lint:fix": "standard --fix",
+    "test": "cross-env NODE_ENV=test mocha test/unit/*.test.js --timeout 10000 --exit",
+    "cov": "nyc --reporter=html --reporter=text npm test",
+    "e2e": "cross-env NODE_ENV=test PORT=3333 mocha test/e2e/*.test.js --timeout 20000 --exit",
+    "cov-e2e": "nyc --reporter=html --reporter=text npm run e2e"
   },
   "author": "TCSCODER",
   "license": "none",
   "devDependencies": {
+    "should": "^13.2.3",
+    "mocha": "^5.2.0",
+    "mocha-prepare": "^0.1.0",
+    "nock": "^9.4.4",
+    "nyc": "^12.0.2",
+    "cross-env": "^5.2.0",
+    "axios": "^0.18.0",
     "standard": "^11.0.1"
   },
   "dependencies": {
     "bluebird": "^3.5.1",
-    "co": "^4.6.0",
     "config": "^1.21.0",
     "get-parameter-names": "^0.3.0",
     "ifxnjs": "^8.0.1",
     "joi": "^9.0.4",
     "lodash": "^4.17.10",
-    "no-kafka": "^3.2.4",
+    "no-kafka": "^3.4.3",
     "q": "^1.5.1",
     "topcoder-healthcheck-dropin": "^1.0.2",
     "winston": "^2.2.0"

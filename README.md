@@ -14,6 +14,7 @@ The following parameters can be set in config files or in env variables:
 - DISABLE_LOGGING: whether to disable logging
 - LOG_LEVEL: the log level; default value: 'debug'
 - KAFKA_URL: comma separated Kafka hosts; default value: 'localhost:9092'
+- KAFKA_GROUP_ID: consumer group id; default value: 'tc-legacy-member-processor-group'
 - KAFKA_CLIENT_CERT: Kafka connection certificate, optional; default value is undefined;
     if not provided, then SSL connection is not used, direct insecure connection is used;
     if provided, it can be either path to certificate file or certificate content
@@ -29,6 +30,9 @@ The following parameters can be set in config files or in env variables:
 - INFORMIX: Informix configuration parameters ( generally, we only need to update INFORMIX_HOST via environment variables, see INFORMIX_HOST parameter in docker/api.env)
 
 Also note that there is a `/health` endpoint that checks for the health of the app. This sets up an expressjs server and listens on the environment variable `PORT`. It's not part of the configuration file and needs to be passed as an environment variable
+
+Configuration for the tests is at `config/test.js`, only add such new configurations different from `config/default.js` 
+- WAIT_TIME: wait time used in test, default is 1000 or one second
 
 ## Local Kafka setup
 
@@ -79,6 +83,7 @@ Once Informix database is properly started, connect to it and execute the follow
 This sequence is used by the source code to generate the ids of the addresses to be inserted in the database.
 
 
+
 ## Local deployment
 - Given the fact that the library used to access Informix DB depends on Informix Client SDK.
 We will run the application on Docker using a base image with Informix Client SDK installed and properly configured.
@@ -102,5 +107,40 @@ docker-compose up
 
 5. When you are running the application for the first time, It will take some time initially to download the image and install the dependencies
 
+
+## Running unit tests and coverage
+You need to run `docker-compose build` if modify source files.
+Make sure run `docker-compose up` in `docker` folder once to make sure application will install dependencies and run successfully with Kafka and Informix.
+
+To run unit tests alone
+Modify `docker/docker-compose.yml` with `entrypoint: npm run test` and run `docker-compose up` in `docker` folder
+
+To run unit tests with coverage report
+
+Modify `docker/docker-compose.yml` with `entrypoint: npm run cov` and run `docker-compose up` in `docker` folder
+
+## Running integration tests and coverage
+
+To run integration tests alone
+
+Modify `docker/docker-compose.yml` with `entrypoint: npm run e2e` and run `docker-compose up` in `docker` folder
+
+
+To run integration tests with coverage report
+
+Modify `docker/docker-compose.yml` with `entrypoint: npm run cov-e2e` and run `docker-compose up` in `docker` folder
+
 ## Verification
 Refer to the verification document under legacy-member-processor/docs/verification.docx
+
+
+### Verification for Topcoder - Legacy member processor updates
+1. unit and e2e tests
+see above unit and e2e tests commands.
+
+2. BUG FIX
+Change to use async/await instead of co, update version of `no-kafka` to latest version in `package.json` to solve this issue.
+Make sure there are no other consumers listening topics and have clean kafka server to test with.
+Make processor up, make sure it could process messages successfully, then make processor down, still send messages, later make processor up again and you will see processor could still process messages sent during processor is down.
+Please note if you send invalid json messages it will still process such invalid json messages during start up of processor and previous application codes did not work properly to reprocess such error messages.
+You may have to manually commit such error messages or rerun e2e tests to make sure all error messages will be processed.
