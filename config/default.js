@@ -3,14 +3,17 @@
  */
 
 module.exports = {
-  DISABLE_LOGGING: process.env.DISABLE_LOGGING || false, // If true, logging will be disabled
+  DISABLE_LOGGING: false, // If true, logging will be disabled
   LOG_LEVEL: process.env.LOG_LEVEL || 'debug',
 
-  KAFKA_URL: process.env.KAFKA_URL_DEV,
+  KAFKA_URL: process.env.KAFKA_URL,
+
+  KAFKA_GROUP_ID: process.env.KAFKA_GROUP_ID || 'tc-legacy-member-processor-group',
+
   // below are used for secure Kafka connection, they are optional
   // for the local Kafka, they are not needed
-  KAFKA_CLIENT_CERT: process.env.KAFKA_CLIENT_CERT_DEV,
-  KAFKA_CLIENT_CERT_KEY: process.env.KAFKA_CLIENT_CERT_KEY_DEV,
+  KAFKA_CLIENT_CERT: process.env.KAFKA_CLIENT_CERT,
+  KAFKA_CLIENT_CERT_KEY: process.env.KAFKA_CLIENT_CERT_KEY,
 
   CREATE_PROFILE_TOPIC: process.env.CREATE_PROFILE_TOPIC || 'member.action.profile.create',
   UPDATE_PROFILE_TOPIC: process.env.UPDATE_PROFILE_TOPIC || 'member.action.profile.update',
@@ -26,9 +29,10 @@ module.exports = {
     HOST: process.env.INFORMIX_HOST || 'localhost',
     PROTOCOL: process.env.IFX_PROTOCOL || 'onsoctcp',
     PORT: process.env.IFX_PORT || '2021',
-    DB_LOCALE: process.env.IFX_DB_LOCALE || 'en_US.57372',
+    DB_LOCALE: process.env.IFX_DB_LOCALE || 'en_US.utf8',
     USER: process.env.IFX_USER || 'informix',
-    PASSWORD: process.env.IFX_PASSWORD || '1nf0rm1x'
+    PASSWORD: process.env.IFX_PASSWORD || '1nf0rm1x',
+    POOL_MAX_SIZE: parseInt(process.env.IFX_POOL_MAX_SIZE || '10')
   },
 
   // The id of the basic info trait

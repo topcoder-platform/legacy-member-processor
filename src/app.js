@@ -3,26 +3,33 @@
  */
 
 global.Promise = require('bluebird')
-const _ = require('lodash')
 const config = require('config')
-const logger = require('./common/logger')
 const Kafka = require('no-kafka')
-const co = require('co')
-const ProcessorService = require('./services/ProcessorService')
 const healthcheck = require('topcoder-healthcheck-dropin')
-
+const logger = require('./common/logger')
+const { getKafkaOptions } = require('./common/helper')
+const ProcessorService = require('./services/ProcessorService')
 // create consumer
-const options = { connectionString: config.KAFKA_URL }
-if (config.KAFKA_CLIENT_CERT && config.KAFKA_CLIENT_CERT_KEY) {
-  options.ssl = { cert: config.KAFKA_CLIENT_CERT, key: config.KAFKA_CLIENT_CERT_KEY }
-}
-const consumer = new Kafka.SimpleConsumer(options)
+const options = getKafkaOptions()
+
+console.log('DISABLE_LOGGING :: ' + config.DISABLE_LOGGING)
+console.log('DISABLE_LOGGING :: ' + typeof (config.DISABLE_LOGGING))
+
+logger.info('Starting the application........')
+logger.info('KAFKA_URL - ' + config.KAFKA_URL)
+logger.info('KAFKA_CLIENT_CERT - ' + config.KAFKA_CLIENT_CERT)
+logger.info('KAFKA_CLIENT_CERT_KEY - ' + config.KAFKA_CLIENT_CERT_KEY)
+
+logger.info('IFX_SERVER - ' + config.IFX_SERVER)
+logger.info('IFX_DATABASE - ' + config.IFX_DATABASE)
+logger.info('INFORMIX_HOST - ' + config.INFORMIX_HOST)
+logger.info(options)
+const consumer = new Kafka.GroupConsumer(options)
 
 // data handler
-const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, (m) => {
+const dataHandler = async (messageSet, topic, partition) => Promise.each(messageSet, async (m) => {
   const message = m.message.value.toString('utf8')
-  logger.info(`Handle Kafka event message; Topic: ${topic}; Partition: ${partition}; Offset: ${
-    m.offset}; Message: ${message}.`)
+  logger.info(`Handle Kafka event message; Topic: ${topic}; Partition: ${partition}; Offset: ${m.offset}; Message: ${message}.`)
   let messageJSON
   try {
     messageJSON = JSON.parse(message)
@@ -37,33 +44,35 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, (
     // ignore the message
     return
   }
-  return co(function * () {
+  try {
     switch (topic) {
       case config.CREATE_PROFILE_TOPIC:
-        yield ProcessorService.createProfile(messageJSON)
+        await ProcessorService.createProfile(messageJSON)
         break
       case config.UPDATE_PROFILE_TOPIC:
-        yield ProcessorService.updateProfile(messageJSON)
+        await ProcessorService.updateProfile(messageJSON)
         break
       case config.UPDATE_PHOTO_TOPIC:
-        yield ProcessorService.updatePhoto(messageJSON)
+        await ProcessorService.updatePhoto(messageJSON)
         break
       case config.EMAIL_CHANGE_VERIFICATION_TOPIC:
-        yield ProcessorService.verifyEmailChange(messageJSON)
+        await ProcessorService.verifyEmailChange(messageJSON)
         break
       case config.CREATE_TRAIT_TOPIC:
-        yield ProcessorService.createOrUpdateTrait(messageJSON)
+        await ProcessorService.createOrUpdateTrait(messageJSON)
         break
       case config.UPDATE_TRAIT_TOPIC:
-        yield ProcessorService.createOrUpdateTrait(messageJSON)
+        await ProcessorService.createOrUpdateTrait(messageJSON)
         break
       default:
         throw new Error(`Invalid topic: ${topic}`)
     }
-  })
-    // commit offset
-    .then(() => consumer.commitOffset({ topic, partition, offset: m.offset }))
-    .catch((err) => logger.error(err))
+    // only commit if no errors
+    await consumer.commitOffset({ topic, partition, offset: m.offset })
+    logger.debug('Successfully processed message')
+  } catch (err) {
+    logger.error(err)
+  }
 })
 
 // check if there is kafka connection alive
@@ -79,15 +88,23 @@ function check () {
   return connected
 }
 
+const topics = [config.CREATE_PROFILE_TOPIC, config.UPDATE_PROFILE_TOPIC,
+  config.CREATE_TRAIT_TOPIC, config.UPDATE_TRAIT_TOPIC,
+  config.UPDATE_PHOTO_TOPIC, config.EMAIL_CHANGE_VERIFICATION_TOPIC]
 consumer
-  .init()
+  .init([{
+    subscriptions: topics,
+    handler: dataHandler
+  }])
   // consume configured topics
   .then(() => {
+    logger.info('Initilized.......')
     healthcheck.init([check])
-
-    const topics = [config.CREATE_PROFILE_TOPIC, config.UPDATE_PROFILE_TOPIC,
-      config.CREATE_TRAIT_TOPIC, config.UPDATE_TRAIT_TOPIC,
-      config.UPDATE_PHOTO_TOPIC, config.EMAIL_CHANGE_VERIFICATION_TOPIC]
-    _.each(topics, (tp) => consumer.subscribe(tp, { time: Kafka.LATEST_OFFSET }, dataHandler))
+    logger.info('Adding topics successfully.......')
+    logger.info(topics)
+    logger.info('Kick Start.......')
   })
   .catch((err) => logger.error(err))
+if (process.env.NODE_ENV === 'test') {
+  module.exports = consumer
+}
