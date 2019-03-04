@@ -27,9 +27,16 @@ jobs:
       - deploy:
           name : Running Masterscript
           command: |
-            git clone --branch v1.1 https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
+            git clone --branch devsts https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
             cp ./../buildscript/master_deploy.sh .
-            ./master_deploy.sh -d ECS -e DEV -t $CIRCLE_BUILD_NUM -s legacy-member-processor
+            cp ./../buildscript/buildenv.sh .
+            cp ./../buildscript/awsconfiguration.sh .
+            ./awsconfiguration.sh DEV
+            source awsenvconf 
+            ./buildenv.sh -e DEV -b legacy-member-processor_deployvar
+            source buildenvvar
+            ./master_deploy.sh -d ECS -e DEV -t latest -s legacy-member-processor_appvar -i legacy-member-processor
+              
   "build-prod":
     docker:
       - image: docker:18.06.0-ce-git
@@ -64,6 +71,7 @@ workflows:
     jobs:
       # Development builds are executed on "develop" branch only.
       - "build-dev":
+          context : org-global
           filters:
             branches:
               only: [ "develop", "dev-circleci" ]
