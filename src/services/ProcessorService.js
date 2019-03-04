@@ -333,8 +333,8 @@ async function updateUserBasicInfoTrait (data, connection) {
   const status = getStatus(data)
 
   const updateUserQuery = 'update user set ' +
-                          "first_name = '" + data.firstName + "', " +
-                          "last_name = '" + data.lastName + "', " +
+                          data.firstName ? "first_name = '" + data.firstName + "', " : '' +
+                          data.lastName ? "last_name = '" + data.lastName + "', " : '' +
                           "status = '" + status + "' " +
                           'where user_id = ' + _.get(data, 'userId')
   // Execute the update user query
