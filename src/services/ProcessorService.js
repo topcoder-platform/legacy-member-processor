@@ -44,14 +44,15 @@ async function createCoderImage (coderId, photoUrl, connection) {
  * @param {*} connection  The connection object to Informix database
  */
 async function createUserProfile (payload, connection) {
+  if (!payload.handle) throw new Error('handle is required!')
   // prepare the statement for inserting the user profile data to common_oltp.user table
   const createUserStmt = await prepare(connection,
     'insert into user (user_id, first_name, last_name, create_date, handle, status, name_in_another_language) ' +
     'values (?,?,?,current,?,?,?)')
 
   // Execute the statement
-  await createUserStmt.executeAsync([_.get(payload, 'userId'), _.get(payload, 'firstName', ''),
-    _.get(payload, 'lastName', ''), _.get(payload, 'handle', ''),
+  await createUserStmt.executeAsync([_.get(payload, 'userId'), _.get(payload, 'firstName'),
+    _.get(payload, 'lastName'), _.get(payload, 'handle', ''),
     getStatus(payload),
     _.get(payload, 'otherLangName', '')])
 
@@ -63,6 +64,18 @@ async function createUserProfile (payload, connection) {
   await insertEmailStmt.executeAsync([_.get(payload, 'userId'), _.get(payload, 'email', '')])
 
   await createUserAddressesForProfile(payload, connection)
+}
+
+createUserProfile.schema = {
+  payload: Joi.object().keys({
+    userId: Joi.number().required(),
+    firstName: Joi.string().required(),
+    lastName: Joi.string().required(),
+    email: Joi.string().email().required(),
+    handle: Joi.string(),
+    otherLangName: Joi.string()
+  }).unknown().required(),
+  connection: Joi.any()
 }
 
 /**
@@ -132,10 +145,10 @@ async function updateUserProfile (payload, connection) {
   // prepare the query for updating the user in the database
   // as per Topcoder policy, the handle cannot be updated, hence it is removed from updated columns
   const userStatus = getStatus(payload)
-  const updateUserQuery = "update user set first_name = '" + _.get(payload, 'firstName', '') + "', " +
-                          "last_name = '" + _.get(payload, 'lastName', '') + "', " +
+  const updateUserQuery = "update user set first_name = '" + _.get(payload, 'firstName') + "', " +
+                          "last_name = '" + _.get(payload, 'lastName') + "', " +
                           "status = '" + userStatus + "', " +
-                          "name_in_another_language = '" + _.get(payload, 'otherLangName', '') + "' " +
+                          "name_in_another_language = '" + _.get(payload, 'otherLangName') + "' " +
                           'where user_id = ' + _.get(payload, 'userId')
   await connection.queryAsync(updateUserQuery)
 
@@ -160,6 +173,8 @@ async function updateUserProfile (payload, connection) {
   }
   await createUserAddressesForProfile(payload, connection)
 }
+
+updateUserProfile.schema = createUserProfile.schema
 
 /**
  * Creates the user addresses using the payload data for profile create update
@@ -318,8 +333,8 @@ async function updateUserBasicInfoTrait (data, connection) {
   const status = getStatus(data)
 
   const updateUserQuery = 'update user set ' +
-                          "first_name = '" + data.firstName + "', " +
-                          "last_name = '" + data.lastName + "', " +
+                          data.firstName ? "first_name = '" + data.firstName + "', " : '' +
+                          data.lastName ? "last_name = '" + data.lastName + "', " : '' +
                           "status = '" + status + "' " +
                           'where user_id = ' + _.get(data, 'userId')
   // Execute the update user query
