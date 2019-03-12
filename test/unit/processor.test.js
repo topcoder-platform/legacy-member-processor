@@ -139,14 +139,14 @@ describe('Legacy member processor Unit Tests', () => {
           image_id: initImageId + 1,
           link: initPhotoUrl
         }
-        let userParams = {
+        let userParams_ = {
           user_id: userId,
           status: 'I'
         }
-        await expectTable('user', 0, userParams)
+        await expectTable('user', 0, userParams_)
         await expectTable('informixoltp:image', 0, imageParams)
         await processorService.createProfile(message)
-        await expectTable('user', 1, userParams)
+        await expectTable('user', 1, userParams_)
         await expectTable('informixoltp:image', 1, imageParams)
         await expectTable('informixoltp:coder_image_xref', 1, { coder_id: userId })
         await processorService[testMethod](testMessage)
@@ -184,15 +184,27 @@ describe('Legacy member processor Unit Tests', () => {
       }
       if (isVerifyEmailChange) {
         userId = _.get(testMethods.createProfile.testMessage, 'payload.userId')
+        const payload_ = _.get(testMethods.createProfile.testMessage, 'payload')
+        if (payload_) {
+          payload = Object.assign(payload, {
+            first_name: _.get(payload_, 'firstName'),
+            last_name: _.get(payload_, 'lastName'),
+            handle: _.get(payload_, 'handle'),
+            status: _.get(payload_, 'status'),
+            name_in_another_language: _.get(payload_, 'otherLangName')
+          })
+        }
       }
-      let userParams = {
+
+      let rawUserParams = {
         user_id: userId,
-        first_name: _.get(payload, 'firstName', ''),
-        last_name: _.get(payload, 'lastName', ''),
-        handle: _.get(payload, 'handle', ''),
-        status: _.get(payload, 'status', '') === 'ACTIVE' ? 'A' : 'I',
-        name_in_another_language: _.get(payload, 'otherLangName', '')
+        first_name: _.get(payload, 'firstName'),
+        last_name: _.get(payload, 'lastName'),
+        handle: _.get(payload, 'handle'),
+        status: _.get(payload, 'status') === 'ACTIVE' ? 'A' : 'I',
+        name_in_another_language: _.get(payload, 'otherLangName')
       }
+      let userParams = _.omitBy(rawUserParams, _.isUndefined)
       if (isUpdateProfile) {
         // cannot update user handle
         userParams = _.omit(userParams, 'handle')
@@ -210,13 +222,14 @@ describe('Legacy member processor Unit Tests', () => {
       if (isVerifyEmailChange) {
         emailParams.address = _.get(payload, 'recipients[0]')
       }
-      let coderParams = {
+      let rawCoderParams = {
         coder_id: userId,
-        quote: _.get(payload, 'description', ''),
-        home_country_code: _.get(payload, 'homeCountryCode', ''),
-        comp_country_code: _.get(payload, 'competitionCountryCode', ''),
+        quote: _.get(payload, 'description'),
+        home_country_code: _.get(payload, 'homeCountryCode'),
+        comp_country_code: _.get(payload, 'competitionCountryCode'),
         display_quote: 1
       }
+      let coderParams = _.omitBy(rawCoderParams, _.isUndefined)
       let imageParams = {
         link: _.get(payload, 'photoURL', '')
       }
@@ -225,9 +238,9 @@ describe('Legacy member processor Unit Tests', () => {
         await expectTable('informixoltp:image', 0, imageParams)
       }
       if (!isUpdatePhoto && isVerifyEmailChange) {
-        await expectTable('user', 0, userParams)
+        await expectTable('user', 1, userParams)
         await expectTable('user_address_xref', isCreateProfile ? 0 : 1, { user_id: userId })
-        await expectTable('informixoltp:coder', 0, coderParams)
+        await expectTable('informixoltp:coder', 1, coderParams)
       }
       if (!isUpdatePhoto) {
         await expectTable('email', 0, emailParams)
@@ -240,13 +253,14 @@ describe('Legacy member processor Unit Tests', () => {
       if (!isUpdatePhoto && !isVerifyEmailChange) {
         for (let addr of payload.addresses) {
           const addrTypeRow = await connection.queryAsync(`select address_type_id from address_type_lu where upper(address_type_desc) = '${addr.type}'`)
-          let addressParam = {
+          let rawAddressParam = {
             address_type_id: addrTypeRow[0].address_type_id,
             address1: addr.streetAddr1,
             address2: addr.streetAddr2,
             city: addr.city,
             zip: addr.zip
           }
+          let addressParam = _.omitBy(rawAddressParam, _.isUndefined)
           if (countryCode) {
             addressParam.country_code = countryCode
           }
