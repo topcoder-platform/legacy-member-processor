@@ -15,15 +15,6 @@ const options = getKafkaOptions()
 console.log('DISABLE_LOGGING :: ' + config.DISABLE_LOGGING)
 console.log('DISABLE_LOGGING :: ' + typeof (config.DISABLE_LOGGING))
 
-logger.info('Starting the application........')
-logger.info('KAFKA_URL - ' + config.KAFKA_URL)
-logger.info('KAFKA_CLIENT_CERT - ' + config.KAFKA_CLIENT_CERT)
-logger.info('KAFKA_CLIENT_CERT_KEY - ' + config.KAFKA_CLIENT_CERT_KEY)
-
-logger.info('IFX_SERVER - ' + config.IFX_SERVER)
-logger.info('IFX_DATABASE - ' + config.IFX_DATABASE)
-logger.info('INFORMIX_HOST - ' + config.INFORMIX_HOST)
-logger.info(options)
 const consumer = new Kafka.GroupConsumer(options)
 
 // data handler
