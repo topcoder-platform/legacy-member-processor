@@ -4,7 +4,7 @@ jobs:
   # Build & Deploy against development backend
   "build-dev":
     docker:
-      - image: docker:18.06.0-ce-git
+      - image: circleci/python:2.7-stretch-browsers
     steps:
       # Initialization.
       - checkout
@@ -12,13 +12,10 @@ jobs:
       - run:
           name: Installation of build dependencies.
           command: |
-            apk add --no-cache bash
-            apk add --no-cache jq py-pip sudo curl
-            pip install --upgrade pip
+            sudo apt install jq
             sudo pip install awscli --upgrade
-            sudo curl -o /usr/local/bin/ecs-cli https://s3.amazonaws.com/amazon-ecs-cli/ecs-cli-linux-amd64-latest
             sudo pip install docker-compose
-            sudo chmod +x /usr/local/bin/ecs-cli
+
       - run:
           name: Executing build.
           command: |
@@ -39,7 +36,7 @@ jobs:
               
   "build-prod":
     docker:
-      - image: docker:18.06.0-ce-git
+      - image: circleci/python:2.7-stretch-browsers
     steps:
       # Initialization.
       - checkout
@@ -47,13 +44,10 @@ jobs:
       - run:
           name: Installation of build dependencies.
           command: |
-            apk add --no-cache bash
-            apk add --no-cache jq py-pip sudo curl
-            pip install --upgrade pip
+            sudo apt install jq
             sudo pip install awscli --upgrade
-            sudo curl -o /usr/local/bin/ecs-cli https://s3.amazonaws.com/amazon-ecs-cli/ecs-cli-linux-amd64-latest
             sudo pip install docker-compose
-            sudo chmod +x /usr/local/bin/ecs-cli
+
       - run:
           name: Executing build .
           command: |
