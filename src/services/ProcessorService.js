@@ -12,7 +12,11 @@ const { prepare, wrapTransaction } = require('../common/helper')
  * @param payload the payload
  * @return {string} A if status of payload is equal to ACTIVE otherwise I
  */
-const getStatus = (payload) => _.get(payload, 'status', '') === 'ACTIVE' ? 'A' : 'I'
+const getStatus = (payload) => {
+  const { status } = payload
+  if (status) return status === 'ACTIVE' ? 'A' : 'I'
+  return status
+}
 
 /**
  * Creates the coder image in the database ( in informixoltp:coder_image_xref table)
@@ -38,44 +42,45 @@ async function createCoderImage (coderId, photoUrl, connection) {
     'insert into informixoltp:coder_image_xref(coder_id, image_id, display_flag, modify_date) values(?, ?, 1, current)')
   await createCoderImgStmt.executeAsync([coderId, imageId])
 }
+
 /**
  * Creates the user profile in the database ( in common_oltp:user table)
  * @param {Object} payload The payload holding the user profile information
  * @param {*} connection  The connection object to Informix database
  */
 async function createUserProfile (payload, connection) {
-  if (!payload.handle) throw new Error('handle is required!')
+  const userId = _.get(payload, 'userId')
+  const email = _.get(payload, 'email')
+
   // prepare the statement for inserting the user profile data to common_oltp.user table
-  const createUserStmt = await prepare(connection,
-    'insert into user (user_id, first_name, last_name, create_date, handle, status, name_in_another_language) ' +
-    'values (?,?,?,current,?,?,?)')
+  const rawPayload = {
+    user_id: userId,
+    first_name: _.get(payload, 'firstName'),
+    last_name: _.get(payload, 'lastName'),
+    handle: _.get(payload, 'userHandle') || _.get(payload, 'handle'),
+    status: getStatus(payload),
+    name_in_another_language: _.get(payload, 'otherLangName')
+  }
+
+  const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
+  const keys = Object.keys(normalizedPayload)
+  const count = keys.length
+  const fields = ['create_date'].concat(keys)
+  const values = ['current'].concat(_.fill(Array(count), '?'))
+
+  const createUserStmt = await prepare(connection, `insert into user (${fields.join(', ')}) values (${values.join(', ')})`)
 
   // Execute the statement
-  await createUserStmt.executeAsync([_.get(payload, 'userId'), _.get(payload, 'firstName'),
-    _.get(payload, 'lastName'), _.get(payload, 'handle', ''),
-    getStatus(payload),
-    _.get(payload, 'otherLangName', '')])
+  await createUserStmt.executeAsync(Object.values(normalizedPayload))
 
   // create the user email entry in the DB
   const insertEmailStmt = await prepare(connection,
     'insert into email(user_id, email_id, email_type_id, address, create_date, modify_date, primary_ind, status_id)' +
     ' values(?, sequence_email_seq.nextval, 1, ?, current, current, 1, 1)')
 
-  await insertEmailStmt.executeAsync([_.get(payload, 'userId'), _.get(payload, 'email', '')])
+  await insertEmailStmt.executeAsync([userId, email])
 
-  await createUserAddressesForProfile(payload, connection)
-}
-
-createUserProfile.schema = {
-  payload: Joi.object().keys({
-    userId: Joi.number().required(),
-    firstName: Joi.string().required(),
-    lastName: Joi.string().required(),
-    email: Joi.string().email().required(),
-    handle: Joi.string(),
-    otherLangName: Joi.string()
-  }).unknown().required(),
-  connection: Joi.any()
+  await createUserAddresses(payload, connection)
 }
 
 /**
@@ -84,16 +89,29 @@ createUserProfile.schema = {
  * @param {Object} connection The connection to Informix Database
  */
 async function createCoderProfile (payload, connection) {
-  const createCoderDataStmt = await prepare(connection,
-    'insert into informixoltp:coder(coder_id, member_since, quote, modify_date, home_country_code, ' +
-    'comp_country_code,display_quote) values(?, current, ?, current, ?, ?, 1)')
+  const photoURL = _.get(payload, 'photoURL')
+  const userId = _.get(payload, 'userId')
+
+  const rawPayload = {
+    coder_id: userId,
+    quote:  _.get(payload, 'description'),
+    home_country_code: _.get(payload, 'homeCountryCode'),
+    comp_country_code: _.get(payload, 'competitionCountryCode')
+  }
+  const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
+
+  const keys = Object.keys(normalizedPayload)
+  const count = keys.length
+  const fields = ['member_since', 'modify_date', 'display_quote'].concat(keys)
+  const values = ['current', 'current', 1].concat(_.fill(Array(count), '?'))
+
+  const createCoderDataStmt = await prepare(connection, `insert into informixoltp:coder(${fields.join(', ')}) values(${values.join(',')})`)
 
   // Create the coder data
-  await createCoderDataStmt.executeAsync([_.get(payload, 'userId'), _.get(payload, 'description', ''),
-    _.get(payload, 'homeCountryCode', ''), _.get(payload, 'competitionCountryCode', '')])
+  await createCoderDataStmt.executeAsync(Object.values(normalizedPayload))
 
-  if (_.get(payload, 'photoURL')) {
-    await createCoderImage(_.get(payload, 'userId'), _.get(payload, 'photoURL'), connection)
+  if (photoURL) {
+    await createCoderImage(userId, photoURL, connection)
   }
 }
 
@@ -118,7 +136,25 @@ createProfile.schema = {
     timestamp: Joi.date().required(),
     'mime-type': Joi.string().required(),
     payload: Joi.object().keys({
-      userId: Joi.number().integer().min(1).required()
+      userId: Joi.number().integer().min(1).required(),
+      firstName: Joi.string().required(),
+      lastName: Joi.string().required(),
+      email: Joi.string().email().required(),
+      userHandle: Joi.string().required(),
+      otherLangName: Joi.string().allow(''),
+      description: Joi.string().allow(''),
+      homeCountryCode: Joi.string().allow(''),
+      competitionCountryCode: Joi.string().allow(''),
+      photoURL: Joi.string().allow(''),
+      addresses: Joi.array().items(Joi.object({
+        type: Joi.string().required(),
+        streetAddr1: Joi.string().required(),
+        city: Joi.string().required(),
+        stateCode: Joi.string().required(),
+        zip: Joi.string().required(),
+        countryCode: Joi.string().allow(''),
+        streetAddr2: Joi.string().allow('')
+      }).unknown(true))
     }).unknown(true).required()
   }).required()
 }
@@ -130,6 +166,10 @@ createProfile.schema = {
  * @param {Object} connection The connection to Informix database.
  */
 async function updateUserEmail (userId, newEmail, connection) {
+  if (newEmail === undefined) {
+    logger.error('address is undefined')
+    return
+  }
   const updateEmailQuery = "update email set address = '" + newEmail + "' " +
                            'where user_id = ' + userId + ' and email_type_id = 1 and primary_ind = 1 ' +
                            'and status_id =1'
@@ -142,69 +182,81 @@ async function updateUserEmail (userId, newEmail, connection) {
  * @param {*} connection  The connection object to Informix database
  */
 async function updateUserProfile (payload, connection) {
+  const userId = _.get(payload, 'userId')
+  const email = _.get(payload, 'email')
+  const addresses = _.get(payload, 'addresses')
   // prepare the query for updating the user in the database
   // as per Topcoder policy, the handle cannot be updated, hence it is removed from updated columns
-  const userStatus = getStatus(payload)
-  const updateUserQuery = "update user set first_name = '" + _.get(payload, 'firstName') + "', " +
-                          "last_name = '" + _.get(payload, 'lastName') + "', " +
-                          "status = '" + userStatus + "', " +
-                          "name_in_another_language = '" + _.get(payload, 'otherLangName') + "' " +
-                          'where user_id = ' + _.get(payload, 'userId')
+  const rawPayload = {
+    first_name: _.get(payload, 'firstName'),
+    last_name: _.get(payload, 'lastName'),
+    status: getStatus(payload),
+    name_in_another_language: _.get(payload, 'otherLangName')
+  }
+
+  const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
+  const keys = Object.keys(normalizedPayload)
+  if (keys.length === 0) {
+    logger.error(`no valid payload`)
+    return
+  }
+
+  const updateStatements = keys.map(key => `${key} = '${normalizedPayload[key]}'`).join(', ')
+
+  const updateUserQuery = `update user set ${updateStatements} where user_id = ${userId}`
   await connection.queryAsync(updateUserQuery)
 
   // update the user email entry in the DB
-  await updateUserEmail(_.get(payload, 'userId'), _.get(payload, 'email'), connection)
-
-  // cleanup the existing user addresses
-  // get and save the ids of the existing user addresses
-  const userExistingAddrsIds = await connection.queryAsync(
-    'select address_id id from user_address_xref where user_id = ' + _.get(payload, 'userId'))
-
-  // Delete all user addresses references
-  const deleteUserAddrsStmt = await prepare(connection,
-    'delete from user_address_xref where user_id = ?')
-  await deleteUserAddrsStmt.executeAsync([_.get(payload, 'userId')])
-
-  // cleanup the addresses from the address table
-  const cleanupAddrsStmt = await prepare(connection,
-    'delete from address where address_id = ?')
-  for (let addr of userExistingAddrsIds) {
-    await cleanupAddrsStmt.executeAsync([addr.id])
+  if (email !== undefined) {
+    await updateUserEmail(userId, email, connection)
   }
-  await createUserAddressesForProfile(payload, connection)
-}
 
-updateUserProfile.schema = createUserProfile.schema
+  if (addresses !== undefined) {
+    await updateUserAddresses(payload, connection)
+  }
+}
 
 /**
  * Creates the user addresses using the payload data for profile create update
  * @param {Object} payload The profile create/update payload object
  * @param {*} connection The Informix DB connection
  */
-async function createUserAddressesForProfile (payload, connection) {
-  // Insert the new user addresses into the database.
-  const insertAddressStmt = await prepare(connection,
-    'insert into address(address_id, address_type_id, address1, address2, city, state_code, zip, create_date, modify_date)' +
-    'values(?, ?, ?, ?, ?, ?, ?, current, current)')
-
-  const createUserAddrStmt = await prepare(connection,
-    'insert into user_address_xref(user_id, address_id) values (?,?)')
-
+async function createUserAddresses (payload, connection) {
   // iterate over the user addresses and create them in the db
+  const userId = _.get(payload, 'userId')
+  const createUserAddrStmt = await prepare(connection, 'insert into user_address_xref(user_id, address_id) values(?, ?)')
   for (let addr of _.get(payload, 'addresses', [])) {
+    const rawPayload = Object.assign({
+      address1: _.get(addr, 'streetAddr1'),
+      city: _.get(addr, 'city'),
+      state_code: _.get(addr, 'stateCode'),
+      zip: _.get(addr, 'zip'),
+      country_code: _.get(payload, 'countryCode'),
+      address2: _.get(addr, 'streetAddr2')
+    })
+
+    const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
+    const keys = Object.keys(normalizedPayload)
+    const count = keys.length
+    const fields = ['create_date', 'modify_date', 'address_id', 'address_type_id'].concat(keys)
+    const values = ['current', 'current', '?', '?'].concat(_.fill(Array(count), '?'))
+
+    // Insert the new user addresses into the database.
+    const query = `insert into address(${fields.join(', ')}) values(${values.join(', ')})`
+    const insertAddressStmt = await prepare(connection, query)
+
     // Get the address type id from the database.
-    const addrTypeRow = await connection.queryAsync('select address_type_id from address_type_lu' +
-      " where upper(address_type_desc) = '" + addr.type + "'")
+    const addrTypeRow = await connection.queryAsync(`select address_type_id from address_type_lu where upper(address_type_desc) = '${addr.type}'`)
 
     // Get the address sequence next value to be used as address id.
     const addrIdRow = await connection.queryAsync('select first 1 sequence_address_seq.nextval from address')
 
     // insert the address into db
-    await insertAddressStmt.executeAsync([addrIdRow[0].nextval, addrTypeRow[0].address_type_id, addr.streetAddr1,
-      addr.streetAddr2, addr.city, addr.stateCode, addr.zip])
+    const values_ = [addrIdRow[0].nextval, addrTypeRow[0].address_type_id].concat(Object.values(normalizedPayload))
+    await insertAddressStmt.executeAsync(values_)
 
     // create the relationship between the user and the address
-    await createUserAddrStmt.executeAsync([_.get(payload, 'userId'), addrIdRow[0].nextval])
+    await createUserAddrStmt.executeAsync([userId, addrIdRow[0].nextval])
   }
 }
 
@@ -214,17 +266,32 @@ async function createUserAddressesForProfile (payload, connection) {
  * @param {Object} connection The connection to Informix Database
  */
 async function updateCoderProfile (payload, connection) {
-  const updateCoderQuery = 'update informixoltp:coder ' +
-                           "set quote='" + _.get(payload, 'description', '') + "', " +
-                           "home_country_code='" + _.get(payload, 'homeCountryCode', '') + "', " +
-                           "comp_country_code='" + _.get(payload, 'competitionCountryCode', '') + "', " +
-                           'display_quote=1 ' +
-                           'where coder_id= ' + _.get(payload, 'userId')
+  const userId = _.get(payload, 'userId')
+  const photoURL = _.get(payload, 'photoURL')
+  // prepare the query for updating the user in the database
+  // as per Topcoder policy, the handle cannot be updated, hence it is removed from updated columns
+  const rawPayload = {
+    quote: _.get(payload, 'description'),
+    home_country_code: _.get(payload, 'homeCountryCode'),
+    comp_country_code: _.get(payload, 'competitionCountryCode'),
+    display_quote: 1
+  }
+
+  const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
+  const keys = Object.keys(normalizedPayload)
+  if (keys.length === 0) {
+    logger.error(`no valid payload`)
+    return
+  }
+
+  const updateStatements = keys.map(key => `${key} = '${normalizedPayload[key]}'`).join(', ')
+
+  const updateCoderQuery = `update informixoltp:coder set ${updateStatements} where coder_id = ${userId}`
 
   await connection.queryAsync(updateCoderQuery)
 
-  if (_.get(payload, 'photoURL')) {
-    await updateCoderPhoto(_.get(payload, 'userId'), _.get(payload, 'photoURL'), connection)
+  if (photoURL) {
+    await updateCoderPhoto(userId, photoURL, connection)
   }
 }
 
@@ -232,6 +299,7 @@ async function updateCoderProfile (payload, connection) {
  * Updates the coder photo in informixoltp:image and informixoltp:coder_image_xref
  * @param {String} coderId The coder id
  * @param {String} photoUrl  The url of the new photo to set for the coder
+ * @param {Object} connection The connection to Informix database.
  */
 async function updateCoderPhoto (coderId, photoUrl, connection) {
   // get the id of the existing image
@@ -253,14 +321,12 @@ async function updateCoderPhoto (coderId, photoUrl, connection) {
  * Updates the user addresses in the Informix database
  * @param {Object} payload The payload containing the addresses data
  * @param {Object} connection The informix connection object
- * @param {String} countryCode The country code for the addresses
  */
-async function updateUserAddresses (payload, connection, countryCode) {
+async function updateUserAddresses (payload, connection) {
   // cleanup the existing user addresses
   // get and save the ids of the existing user addresses
   const userExistingAddrsIds = await connection.queryAsync(
-    'select address_id id from user_address_xref where user_id = ' + _.get(payload, 'userId'))
-
+    'select * from user_address_xref where user_id = ' + _.get(payload, 'userId'))
   // Delete all user addresses references
   const deleteUserAddrsStmt = await prepare(connection,
     'delete from user_address_xref where user_id = ?')
@@ -270,39 +336,10 @@ async function updateUserAddresses (payload, connection, countryCode) {
   const cleanupAddrsStmt = await prepare(connection,
     'delete from address where address_id = ?')
   for (let addr of userExistingAddrsIds) {
-    await cleanupAddrsStmt.executeAsync([addr.id])
+    await cleanupAddrsStmt.executeAsync([addr.address_id])
   }
 
-  const createUserAddrStmt = await prepare(connection,
-    'insert into user_address_xref(user_id, address_id) values (?,?)')
-  // iterate over the user addresses and create them in the db
-  for (let addr of _.get(payload, 'addresses', [])) {
-    // Get the address type id from the database.
-    const addrTypeRow = await connection.queryAsync(`select address_type_id from address_type_lu where upper(address_type_desc) = '${addr.type}'`)
-
-    // Get the address sequence next value to be used as address id.
-    const addrIdRow = await connection.queryAsync('select first 1 sequence_address_seq.nextval from address')
-
-    // insert the address into db
-    if (countryCode) {
-      let insertAddressQuery = 'insert into address(address_id, address_type_id, address1, address2, city, ' +
-        'zip, country_code, create_date, modify_date) ' +
-        'values(' + addrIdRow[0].nextval + ',' + addrTypeRow[0].address_type_id + ',' +
-        "'" + addr.streetAddr1 + "','" + addr.streetAddr2 + "','" + addr.city + "'," +
-        "'" + addr.zip + "','" + countryCode + "',current, current)"
-      await connection.queryAsync(insertAddressQuery)
-    } else {
-      let insertAddressQuery = 'insert into address(address_id, address_type_id, address1, address2, city, ' +
-        'zip, create_date, modify_date) ' +
-        'values(' + addrIdRow[0].nextval + ',' + addrTypeRow[0].address_type_id + ',' +
-        "'" + addr.streetAddr1 + "','" + addr.streetAddr2 + "','" + addr.city + "'," +
-        "'" + addr.zip + "',current, current)"
-
-      await connection.queryAsync(insertAddressQuery)
-    }
-    // create the relationship between the user and the address
-    await createUserAddrStmt.executeAsync([_.get(payload, 'userId'), addrIdRow[0].nextval])
-  }
+  await createUserAddresses(payload, connection)
 }
 
 /**
@@ -322,7 +359,35 @@ async function updateProfile (message) {
   })
 }
 
-updateProfile.schema = createProfile.schema
+updateProfile.schema = {
+  message: Joi.object().keys({
+    topic: Joi.string().required(),
+    originator: Joi.string().required(),
+    timestamp: Joi.date().required(),
+    'mime-type': Joi.string().required(),
+    payload: Joi.object().keys({
+      userId: Joi.number().integer().min(1).required(),
+      firstName: Joi.string().allow(''),
+      lastName: Joi.string().allow(''),
+      email: Joi.string().email().allow(''),
+      userHandle: Joi.string().allow(''),
+      otherLangName: Joi.string().allow(''),
+      description: Joi.string().allow(''),
+      homeCountryCode: Joi.string().allow(''),
+      competitionCountryCode: Joi.string().allow(''),
+      photoURL: Joi.string().allow(''),
+      addresses: Joi.array().items(Joi.object({
+        type: Joi.string().required(),
+        streetAddr1: Joi.string().required(),
+        city: Joi.string().required(),
+        stateCode: Joi.string().required(),
+        zip: Joi.string().required(),
+        countryCode: Joi.string().allow(''),
+        streetAddr2: Joi.string().allow('')
+      }).unknown(true))
+    }).unknown(true).required()
+  }).required()
+}
 
 /**
  * Updates the user basic info in the Informix database.
@@ -330,35 +395,24 @@ updateProfile.schema = createProfile.schema
  * @param {*} connection
  */
 async function updateUserBasicInfoTrait (data, connection) {
-  const status = getStatus(data)
-
-  const updateUserQuery = 'update user set ' +
-                          data.firstName ? "first_name = '" + data.firstName + "', " : '' +
-                          data.lastName ? "last_name = '" + data.lastName + "', " : '' +
-                          "status = '" + status + "' " +
-                          'where user_id = ' + _.get(data, 'userId')
-  // Execute the update user query
-  await connection.queryAsync(updateUserQuery)
-
-  // update the user email entry in the DB
-  await updateUserEmail(_.get(data, 'userId'), _.get(data, 'email'), connection)
-
-  // Update the basic info trait in informixoltp database
-  await updateCoderProfile(data, connection)
-
-  // get the country code by country name
-  const countryCode = await connection.queryAsync(
-    "select country_code code from informixoltp:country where upper(country_name) = upper('" + data.country + "')")
-
-  if (countryCode && countryCode.length > 0) {
-    await updateUserAddresses(data, connection, countryCode[0].code)
-  } else { // update the addresses without setting the country code
-    await updateUserAddresses(data, connection)
+  if (data.country) {
+    // get the country code by country name
+    const countryCode = await connection.queryAsync(
+      "select country_code code from informixoltp:country where upper(country_name) = upper('" + data.country + "')")
+    if (countryCode && countryCode.length > 0) {
+      data.countryCode = countryCode[0].code
+    }
   }
+
+  // Update the basic info trait in common_oltp:user
+  await updateUserProfile(data, connection)
+
+  // Update the basic info trait in informixoltp:coder
+  await updateCoderProfile(data, connection)
 }
 
 /**
- * Create or updates trait data in Informix database
+ * Update trait data in Informix database
  * @param {Object} message the message
  */
 async function createOrUpdateTrait (message) {
@@ -369,10 +423,11 @@ async function createOrUpdateTrait (message) {
     return
   }
   await wrapTransaction(async (connection) => {
+    const data = _.get(message, 'payload.traits.data[0]')
     // check if the user exists in the DB
     if (await ensureUserExist(message, connection)) {
       // create or update the user trait
-      await updateUserBasicInfoTrait(_.get(message, 'payload.traits.data[0]'), connection)
+      await updateUserBasicInfoTrait(data, connection)
     }
   })
 }
@@ -388,21 +443,21 @@ createOrUpdateTrait.schema = {
       traitId: Joi.string().required(),
       traits: Joi.object().keys({
         traitId: Joi.string(),
-        data: Joi.array().length(1).required()
+        data: Joi.array(Joi.object().keys({
+          userId: Joi.number().integer().min(1).required(),
+          country: Joi.string().allow(''),
+          firstName: Joi.string().allow(''),
+          lastName: Joi.string().allow(''),
+          addresses: Joi.array().items(Joi.object({
+            type: Joi.string().allow(''),
+            streetAddr1: Joi.string().allow(''),
+            city: Joi.string().allow(''),
+            stateCode: Joi.string().allow(''),
+            zip: Joi.string().allow(''),
+            streetAddr2: Joi.string().allow('')
+          })),
+        })).length(1).required()
       })
-    }).unknown(true).required()
-  }).required()
-}
-
-updatePhoto.schema = {
-  message: Joi.object().keys({
-    topic: Joi.string().required(),
-    originator: Joi.string().required(),
-    timestamp: Joi.date().required(),
-    'mime-type': Joi.string().required(),
-    payload: Joi.object().keys({
-      userId: Joi.number().integer().min(1).required(),
-      photoURL: Joi.string().uri().required()
     }).unknown(true).required()
   }).required()
 }
@@ -418,6 +473,19 @@ async function updatePhoto (message) {
       await updateCoderPhoto(_.get(message, 'payload.userId'), _.get(message, 'payload.photoURL'), connection)
     }
   })
+}
+
+updatePhoto.schema = {
+  message: Joi.object().keys({
+    topic: Joi.string().required(),
+    originator: Joi.string().required(),
+    timestamp: Joi.date().required(),
+    'mime-type': Joi.string().required(),
+    payload: Joi.object().keys({
+      userId: Joi.number().integer().min(1).required(),
+      photoURL: Joi.string().uri().required()
+    }).unknown(true).required()
+  }).required()
 }
 
 /**
@@ -462,6 +530,10 @@ async function getUserByHandle (handle, connection) {
 async function verifyEmailChange (message) {
   await wrapTransaction(async (connection) => {
     const userHandle = _.get(message, 'payload.data.userHandle')
+    if (!userHandle) {
+      logger.error(`user handle is empty`)
+      return
+    }
     // check if the user exists
     const users = await getUserByHandle(userHandle, connection)
 
