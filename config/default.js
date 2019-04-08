@@ -17,8 +17,8 @@ module.exports = {
 
   CREATE_PROFILE_TOPIC: process.env.CREATE_PROFILE_TOPIC || 'member.action.profile.create',
   UPDATE_PROFILE_TOPIC: process.env.UPDATE_PROFILE_TOPIC || 'member.action.profile.update',
-  CREATE_TRAIT_TOPIC: process.env.CREATE_TRAIT_TOPIC || 'member.action.profile.trait.create',
-  UPDATE_TRAIT_TOPIC: process.env.UPDATE_TRAIT_TOPIC || 'member.action.profile.trait.update',
+  //CREATE_TRAIT_TOPIC: process.env.CREATE_TRAIT_TOPIC || 'member.action.profile.trait.create',
+  //UPDATE_TRAIT_TOPIC: process.env.UPDATE_TRAIT_TOPIC || 'member.action.profile.trait.update',
   UPDATE_PHOTO_TOPIC: process.env.UPDATE_PHOTO_TOPIC || 'member.action.profile.photo.update',
   EMAIL_CHANGE_VERIFICATION_TOPIC: process.env.EMAIL_CHANGE_VERIFICATION_TOPIC || 'member.action.email.profile.emailchange.verification',
 

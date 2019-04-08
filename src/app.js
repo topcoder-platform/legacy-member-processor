@@ -50,10 +50,10 @@ const dataHandler = async (messageSet, topic, partition) => Promise.each(message
         await ProcessorService.verifyEmailChange(messageJSON)
         break
       case config.CREATE_TRAIT_TOPIC:
-        await ProcessorService.createOrUpdateTrait(messageJSON)
+        //await ProcessorService.createOrUpdateTrait(messageJSON)
         break
       case config.UPDATE_TRAIT_TOPIC:
-        await ProcessorService.createOrUpdateTrait(messageJSON)
+        //await ProcessorService.createOrUpdateTrait(messageJSON)
         break
       default:
         throw new Error(`Invalid topic: ${topic}`)
