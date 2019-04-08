@@ -10,5 +10,6 @@ services:
     network_mode: "host"   
     #entrypoint: npm run test
     #entrypoint: npm run cov
-    entrypoint: npm run e2e
+    #entrypoint: npm run e2e
     #entrypoint: npm run cov-e2e
+    entrypoint: npm run start:docker

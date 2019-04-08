@@ -23,10 +23,7 @@ The following parameters can be set in config files or in env variables:
     if provided, it can be either path to private key file or private key content
 - CREATE_PROFILE_TOPIC: create profile Kafka topic, default value is 'member.action.profile.create'
 - UPDATE_PROFILE_TOPIC: update profile Kafka topic, default value is 'member.action.profile.update'
-- CREATE_TRAIT_TOPIC: create trait Kafka topic, default value is 'member.action.profile.trait.create'
-- UPDATE_TRAIT_TOPIC: update trait Kafka topic, default value is 'member.action.profile.trait.update'
 - UPDATE_PHOTO_TOPIC: update photo Kafka topic, default value is 'member.action.profile.photo.update'
-- EMAIL_CHANGE_VERIFICATION_TOPIC : email change verification topic, default value is 'member.action.email.profile.emailchange.verification'
 - INFORMIX: Informix configuration parameters ( generally, we only need to update INFORMIX_HOST via environment variables, see INFORMIX_HOST parameter in docker/api.env)
 
 Also note that there is a `/health` endpoint that checks for the health of the app. This sets up an expressjs server and listens on the environment variable `PORT`. It's not part of the configuration file and needs to be passed as an environment variable
