@@ -26,6 +26,7 @@ const testMethods = {
     stringFields,
     testMessage: updateProfileMessage
   },
+  /*
   'createOrUpdateTrait': {
     requiredFields: [...messageRequiredFields, 'payload.userId', 'payload.traitId', 'payload.traits.data'],
     integerFields: ['payload.userId'],
@@ -33,6 +34,7 @@ const testMethods = {
     arrayFields: ['payload.traits.data'],
     testMessage: createTraitMessage
   },
+  */
   'updatePhoto': {
     requiredFields: [...messageRequiredFields, 'payload.userId', 'payload.photoURL'],
     integerFields: ['payload.userId'],

@@ -283,6 +283,13 @@ async function updateCoderProfile (payload, connection) {
   if (competitionCountryIsoAplpha3Code) {
     competitionCountryCode = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + competitionCountryIsoAplpha3Code + "')")
   }
+
+  console.log("================== homeCountryCode");
+  console.log(homeCountryCode);
+  console.log("==================");
+  console.log("================== competitionCountryCode");
+  console.log(competitionCountryCode);
+  console.log("==================");
   
   // prepare the query for updating the user in the database
   // as per Topcoder policy, the handle cannot be updated, hence it is removed from updated columns

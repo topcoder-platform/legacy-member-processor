@@ -60,7 +60,6 @@ describe('Legacy member processor e2e Tests', () => {
     const consumer = new Kafka.GroupConsumer(kafkaOptions)
     await consumer.init([{
       subscriptions: [config.CREATE_PROFILE_TOPIC, config.UPDATE_PROFILE_TOPIC,
-        config.CREATE_TRAIT_TOPIC, config.UPDATE_TRAIT_TOPIC,
         config.UPDATE_PHOTO_TOPIC, config.EMAIL_CHANGE_VERIFICATION_TOPIC],
       handler: (messageSet, topic, partition) => Promise.each(messageSet, (m) => consumer.commitOffset({ topic, partition, offset: m.offset }))
     }])
