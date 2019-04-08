@@ -277,19 +277,18 @@ async function updateCoderProfile (payload, connection) {
   var competitionCountryCode;
 
   if (homeCountryIsoAplpha3Code) {
-    homeCountryCode = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + homeCountryIsoAplpha3Code + "')")
+    const homeCountryCodeArray = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + homeCountryIsoAplpha3Code + "')")
+    if (homeCountryCodeArray && homeCountryCodeArray.length > 0) {
+      homeCountryCode = homeCountryCodeArray[0].country_code
+    }
   }
 
   if (competitionCountryIsoAplpha3Code) {
-    competitionCountryCode = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + competitionCountryIsoAplpha3Code + "')")
+    const competitionCountryCodeArray = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + competitionCountryIsoAplpha3Code + "')")
+    if (competitionCountryCodeArray && competitionCountryCodeArray.length > 0) {
+      competitionCountryCode = competitionCountryCodeArray[0].country_code
+    }
   }
-
-  console.log("================== homeCountryCode");
-  console.log(homeCountryCode);
-  console.log("==================");
-  console.log("================== competitionCountryCode");
-  console.log(competitionCountryCode);
-  console.log("==================");
   
   // prepare the query for updating the user in the database
   // as per Topcoder policy, the handle cannot be updated, hence it is removed from updated columns
