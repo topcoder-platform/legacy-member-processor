@@ -200,6 +200,16 @@ async function updateUserProfile (payload, connection) {
   const userId = _.get(payload, 'userId')
   const email = _.get(payload, 'email')
   const addresses = _.get(payload, 'addresses')
+
+  // update the user email entry in the DB
+  if (email !== undefined) {
+    await updateUserEmail(userId, email, connection)
+  }
+
+  if (addresses !== undefined) {
+    await updateUserAddresses(payload, connection)
+  }
+
   // prepare the query for updating the user in the database
   // as per Topcoder policy, the handle cannot be updated, hence it is removed from updated columns
   const rawPayload = {
@@ -220,15 +230,6 @@ async function updateUserProfile (payload, connection) {
 
   const updateUserQuery = `update user set ${updateStatements} where user_id = ${userId}`
   await connection.queryAsync(updateUserQuery)
-
-  // update the user email entry in the DB
-  if (email !== undefined) {
-    await updateUserEmail(userId, email, connection)
-  }
-
-  if (addresses !== undefined) {
-    await updateUserAddresses(payload, connection)
-  }
 }
 
 /**
