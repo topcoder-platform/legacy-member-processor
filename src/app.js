@@ -46,17 +46,6 @@ const dataHandler = async (messageSet, topic, partition) => Promise.each(message
       case config.UPDATE_PHOTO_TOPIC:
         await ProcessorService.updatePhoto(messageJSON)
         break
-      case config.EMAIL_CHANGE_VERIFICATION_TOPIC:
-        await ProcessorService.verifyEmailChange(messageJSON)
-        break
-      /*
-      case config.CREATE_TRAIT_TOPIC:
-        await ProcessorService.createOrUpdateTrait(messageJSON)
-        break
-      case config.UPDATE_TRAIT_TOPIC:
-        await ProcessorService.createOrUpdateTrait(messageJSON)
-        break
-      */
       default:
         throw new Error(`Invalid topic: ${topic}`)
     }
@@ -81,13 +70,8 @@ function check () {
   return connected
 }
 
-/*
 const topics = [config.CREATE_PROFILE_TOPIC, config.UPDATE_PROFILE_TOPIC,
-  config.CREATE_TRAIT_TOPIC, config.UPDATE_TRAIT_TOPIC,
-  config.UPDATE_PHOTO_TOPIC, config.EMAIL_CHANGE_VERIFICATION_TOPIC]
-  */
- const topics = [config.CREATE_PROFILE_TOPIC, config.UPDATE_PROFILE_TOPIC,
-  config.UPDATE_PHOTO_TOPIC, config.EMAIL_CHANGE_VERIFICATION_TOPIC]
+  config.UPDATE_PHOTO_TOPIC]
 consumer
   .init([{
     subscriptions: topics,

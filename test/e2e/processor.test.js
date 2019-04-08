@@ -59,8 +59,7 @@ describe('Legacy member processor e2e Tests', () => {
     // remove all not processed messages
     const consumer = new Kafka.GroupConsumer(kafkaOptions)
     await consumer.init([{
-      subscriptions: [config.CREATE_PROFILE_TOPIC, config.UPDATE_PROFILE_TOPIC,
-        config.UPDATE_PHOTO_TOPIC, config.EMAIL_CHANGE_VERIFICATION_TOPIC],
+      subscriptions: [config.CREATE_PROFILE_TOPIC, config.UPDATE_PROFILE_TOPIC, config.UPDATE_PHOTO_TOPIC],
       handler: (messageSet, topic, partition) => Promise.each(messageSet, (m) => consumer.commitOffset({ topic, partition, offset: m.offset }))
     }])
     // make sure process all not committed messages before test
