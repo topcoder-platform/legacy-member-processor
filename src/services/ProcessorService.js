@@ -197,7 +197,7 @@ async function updateUserProfile (payload, connection) {
   const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
   const keys = Object.keys(normalizedPayload)
   if (keys.length === 0) {
-    logger.error(`no valid payload`)
+    logger.warn(`no valid payload`)
     return
   }
 
@@ -268,19 +268,35 @@ async function createUserAddresses (payload, connection) {
 async function updateCoderProfile (payload, connection) {
   const userId = _.get(payload, 'userId')
   const photoURL = _.get(payload, 'photoURL')
+
+  // Get the CountryCode via IsoAplpha3Code from informix
+  const homeCountryIsoAplpha3Code = _.get(payload, 'homeCountryCode')
+  const competitionCountryIsoAplpha3Code = _.get(payload, 'competitionCountryCode')
+
+  var homeCountryCode;
+  var competitionCountryCode;
+
+  if (homeCountryIsoAplpha3Code) {
+    homeCountryCode = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + homeCountryIsoAplpha3Code + "')")
+  }
+
+  if (competitionCountryIsoAplpha3Code) {
+    competitionCountryCode = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + competitionCountryIsoAplpha3Code + "')")
+  }
+  
   // prepare the query for updating the user in the database
   // as per Topcoder policy, the handle cannot be updated, hence it is removed from updated columns
   const rawPayload = {
     quote: _.get(payload, 'description'),
-    home_country_code: _.get(payload, 'homeCountryCode'),
-    comp_country_code: _.get(payload, 'competitionCountryCode'),
+    home_country_code: homeCountryCode,
+    comp_country_code: competitionCountryCode,
     display_quote: 1
   }
 
   const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
   const keys = Object.keys(normalizedPayload)
   if (keys.length === 0) {
-    logger.error(`no valid payload`)
+    logger.warn(`no valid payload`)
     return
   }
 
