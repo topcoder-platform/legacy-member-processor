@@ -71,7 +71,7 @@ async function createUserProfile (payload, connection) {
   }
 
   const userCount = await connection.queryAsync("select count(*) from user where upper(handle) = upper('" + rawPayload.handle + "')")
-  if (userCount != 0) {
+  if (userCount == 0) {
     const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
     const keys = Object.keys(normalizedPayload)
     const count = keys.length
