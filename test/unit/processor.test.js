@@ -160,9 +160,9 @@ describe('Legacy member processor Unit Tests', () => {
     if (isVerifyEmailChange) {
       it('test verifyEmailChange with invalid handle in database', async () => {
         let message = verifyEmailChangeInvalidHandleMessage
-        let userHandle = _.get(message, 'payload.data.userHandle')
+        let handle = _.get(message, 'payload.data.handle')
         await processorService[testMethod](message)
-        assertErrorMessage(`The user with handle = ${userHandle} does not exist`)
+        assertErrorMessage(`The user with handle = ${handle} does not exist`)
       })
     }
     it(`test ${testMethod} by valid message`, async () => {
