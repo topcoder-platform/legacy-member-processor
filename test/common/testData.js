@@ -43,8 +43,8 @@ const testMethods = {
     testMessage: updatePhotoMessage
   },
   'verifyEmailChange': {
-    requiredFields: [...messageRequiredFields, 'payload.data.userHandle', 'payload.recipients'],
-    stringFields: [...stringFields, 'payload.data.userHandle'],
+    requiredFields: [...messageRequiredFields, 'payload.data.handle', 'payload.recipients'],
+    stringFields: [...stringFields, 'payload.data.handle'],
     arrayFields: ['payload.recipients'],
     testMessage: verifyEmailChangeMessage
   }

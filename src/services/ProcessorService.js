@@ -32,7 +32,7 @@ createProfile.schema = {
       firstName: Joi.string().required(),
       lastName: Joi.string().required(),
       email: Joi.string().email().required(),
-      userHandle: Joi.string().required(),
+      handle: Joi.string().required(),
       otherLangName: Joi.string().allow(''),
       description: Joi.string().allow(''),
       homeCountryCode: Joi.string().allow(''),
@@ -65,7 +65,7 @@ async function createUserProfile (payload, connection) {
     user_id: userId,
     first_name: _.get(payload, 'firstName'),
     last_name: _.get(payload, 'lastName'),
-    handle: _.get(payload, 'userHandle') || _.get(payload, 'handle'),
+    handle: _.get(payload, 'handle') || _.get(payload, 'userHandle'),
     status: getStatus(payload),
     name_in_another_language: _.get(payload, 'otherLangName')
   }
@@ -172,7 +172,7 @@ updateProfile.schema = {
       firstName: Joi.string().allow(''),
       lastName: Joi.string().allow(''),
       email: Joi.string().email().allow(''),
-      userHandle: Joi.string().allow(''),
+      handle: Joi.string().allow(''),
       otherLangName: Joi.string().allow(''),
       description: Joi.string().allow(''),
       homeCountryCode: Joi.string().allow(''),

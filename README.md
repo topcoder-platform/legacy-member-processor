@@ -62,7 +62,7 @@ Configuration for the tests is at `config/test.js`, only add such new configurat
 - run the producer and then write some message into the console to send to the `member.action.profile.create` topic:
   `bin/kafka-console-producer.sh --broker-list localhost:9092 --topic member.action.profile.create`
   in the console, write message, one message per line:
-  `{ "topic": "member.action.profile.create", "originator": "member-api", "timestamp": "2018-02-16T00:00:00", "mime-type": "application/json", "payload": { "userId": 1111, "userHandle": "handle", "email": "email@test.com", "sex": "male", "created": "2018-01-02T00:00:00", "createdBy": "admin" } }`
+  `{ "topic": "member.action.profile.create", "originator": "member-api", "timestamp": "2018-02-16T00:00:00", "mime-type": "application/json", "payload": { "userId": 1111, "handle": "handle", "email": "email@test.com", "sex": "male", "created": "2018-01-02T00:00:00", "createdBy": "admin" } }`
 - optionally, use another terminal, go to same directory, start a consumer to view the messages:
   `bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic member.action.profile.create --from-beginning`
 - writing/reading messages to/from other topics are similar
