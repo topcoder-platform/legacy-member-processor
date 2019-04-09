@@ -70,25 +70,28 @@ async function createUserProfile (payload, connection) {
     name_in_another_language: _.get(payload, 'otherLangName')
   }
 
-  const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
-  const keys = Object.keys(normalizedPayload)
-  const count = keys.length
-  const fields = ['create_date'].concat(keys)
-  const values = ['current'].concat(_.fill(Array(count), '?'))
+  const userCount = await connection.queryAsync("select count(*) from user where upper(handle) = upper('" + rawPayload.handle + "')")
+  if (userCount != 0) {
+    const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
+    const keys = Object.keys(normalizedPayload)
+    const count = keys.length
+    const fields = ['create_date'].concat(keys)
+    const values = ['current'].concat(_.fill(Array(count), '?'))
 
-  const createUserStmt = await prepare(connection, `insert into user (${fields.join(', ')}) values (${values.join(', ')})`)
+    const createUserStmt = await prepare(connection, `insert into user (${fields.join(', ')}) values (${values.join(', ')})`)
 
-  // Execute the statement
-  await createUserStmt.executeAsync(Object.values(normalizedPayload))
+    // Execute the statement
+    await createUserStmt.executeAsync(Object.values(normalizedPayload))
 
-  // create the user email entry in the DB
-  const insertEmailStmt = await prepare(connection,
-    'insert into email(user_id, email_id, email_type_id, address, create_date, modify_date, primary_ind, status_id)' +
-    ' values(?, sequence_email_seq.nextval, 1, ?, current, current, 1, 1)')
+    // create the user email entry in the DB
+    const insertEmailStmt = await prepare(connection,
+      'insert into email(user_id, email_id, email_type_id, address, create_date, modify_date, primary_ind, status_id)' +
+      ' values(?, sequence_email_seq.nextval, 1, ?, current, current, 1, 1)')
 
-  await insertEmailStmt.executeAsync([userId, email])
+    await insertEmailStmt.executeAsync([userId, email])
 
-  await createUserAddresses(payload, connection)
+    await createUserAddresses(payload, connection)
+  }
 }
 
 /**
