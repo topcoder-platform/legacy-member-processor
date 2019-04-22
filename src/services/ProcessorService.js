@@ -35,8 +35,8 @@ createProfile.schema = {
     'mime-type': Joi.string().required(),
     payload: Joi.object().keys({
       userId: Joi.number().integer().min(1).required(),
-      firstName: Joi.string().required(),
-      lastName: Joi.string().required(),
+      firstName: Joi.string().required().allow(''),
+      lastName: Joi.string().required().allow(''),
       email: Joi.string().email().required(),
       handle: Joi.string().required(),
       otherLangName: Joi.string().allow(''),
@@ -45,11 +45,11 @@ createProfile.schema = {
       competitionCountryCode: Joi.string().allow(''),
       photoURL: Joi.string().allow(''),
       addresses: Joi.array().items(Joi.object({
-        type: Joi.string().required(),
+        type: Joi.string().required().allow(''),
         streetAddr1: Joi.string().required().allow(''),
-        city: Joi.string().required(),
-        stateCode: Joi.string().required(),
-        zip: Joi.string().required(),
+        city: Joi.string().required().allow(''),
+        stateCode: Joi.string().required().allow(''),
+        zip: Joi.string().required().allow(''),
         countryCode: Joi.string().allow(''),
         streetAddr2: Joi.string().allow('')
       }).unknown(true))
@@ -177,25 +177,24 @@ updateProfile.schema = {
       userId: Joi.number().integer().min(1).required(),
       firstName: Joi.string().allow(''),
       lastName: Joi.string().allow(''),
-      email: Joi.string().email().allow(''),
-      handle: Joi.string().allow(''),
+      email: Joi.string().email().required(),
+      handle: Joi.string().required(),
       otherLangName: Joi.string().allow(''),
       description: Joi.string().allow(''),
       homeCountryCode: Joi.string().allow(''),
       competitionCountryCode: Joi.string().allow(''),
       photoURL: Joi.string().allow(''),
       addresses: Joi.array().items(Joi.object({
-        type: Joi.string().required(),
+        type: Joi.string().required().allow(''),
         streetAddr1: Joi.string().required().allow(''),
-        city: Joi.string().required(),
-        stateCode: Joi.string().required(),
-        zip: Joi.string().required(),
+        city: Joi.string().required().allow(''),
+        stateCode: Joi.string().required().allow(''),
+        zip: Joi.string().required().allow(''),
         countryCode: Joi.string().allow(''),
         streetAddr2: Joi.string().allow('')
       }).unknown(true))
     }).unknown(true).required()
   }).required()
-}
 
 /**
  * Updates the user profile in the database ( in common_oltp:user table)
