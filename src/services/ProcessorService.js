@@ -35,8 +35,8 @@ createProfile.schema = {
     'mime-type': Joi.string().required(),
     payload: Joi.object().keys({
       userId: Joi.number().integer().min(1).required(),
-      firstName: Joi.string().required().allow(''),
-      lastName: Joi.string().required().allow(''),
+      firstName: Joi.string().allow(''),
+      lastName: Joi.string().allow(''),
       email: Joi.string().email().required(),
       handle: Joi.string().required(),
       otherLangName: Joi.string().allow(''),
@@ -195,6 +195,7 @@ updateProfile.schema = {
       }).unknown(true))
     }).unknown(true).required()
   }).required()
+}
 
 /**
  * Updates the user profile in the database ( in common_oltp:user table)
