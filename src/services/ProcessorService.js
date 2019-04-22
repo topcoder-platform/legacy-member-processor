@@ -41,7 +41,7 @@ createProfile.schema = {
       handle: Joi.string().required(),
       otherLangName: Joi.string().allow(''),
       description: Joi.string().allow(''),
-      homeCountryCode: Joi.string().allow(''),
+      homeCountryCode: Joi.string().allow('').allow(null),
       competitionCountryCode: Joi.string().allow(''),
       photoURL: Joi.string().allow(''),
       addresses: Joi.array().items(Joi.object({
@@ -181,7 +181,7 @@ updateProfile.schema = {
       handle: Joi.string().required(),
       otherLangName: Joi.string().allow(''),
       description: Joi.string().allow(''),
-      homeCountryCode: Joi.string().allow(''),
+      homeCountryCode: Joi.string().allow('').allow(null),
       competitionCountryCode: Joi.string().allow(''),
       photoURL: Joi.string().allow(''),
       addresses: Joi.array().items(Joi.object({
