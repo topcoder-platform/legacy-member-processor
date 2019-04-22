@@ -46,7 +46,7 @@ createProfile.schema = {
       photoURL: Joi.string().allow(''),
       addresses: Joi.array().items(Joi.object({
         type: Joi.string().required(),
-        streetAddr1: Joi.string().required(),
+        streetAddr1: Joi.string().required().allow(''),
         city: Joi.string().required(),
         stateCode: Joi.string().required(),
         zip: Joi.string().required(),
@@ -186,7 +186,7 @@ updateProfile.schema = {
       photoURL: Joi.string().allow(''),
       addresses: Joi.array().items(Joi.object({
         type: Joi.string().required(),
-        streetAddr1: Joi.string().required(),
+        streetAddr1: Joi.string().required().allow(''),
         city: Joi.string().required(),
         stateCode: Joi.string().required(),
         zip: Joi.string().required(),
