@@ -39,19 +39,19 @@ createProfile.schema = {
       lastName: Joi.string().allow(''),
       email: Joi.string().email().required(),
       handle: Joi.string().required(),
-      otherLangName: Joi.string().allow(''),
-      description: Joi.string().allow(''),
+      otherLangName: Joi.string().allow('').allow(null),
+      description: Joi.string().allow('').allow(null),
       homeCountryCode: Joi.string().allow('').allow(null),
-      competitionCountryCode: Joi.string().allow(''),
+      competitionCountryCode: Joi.string().allow('').allow(null),
       photoURL: Joi.string().allow(''),
       addresses: Joi.array().items(Joi.object({
-        type: Joi.string().required().allow(''),
-        streetAddr1: Joi.string().required().allow(''),
-        city: Joi.string().required().allow(''),
-        stateCode: Joi.string().required().allow(''),
-        zip: Joi.string().required().allow(''),
-        countryCode: Joi.string().allow(''),
-        streetAddr2: Joi.string().allow('')
+        type: Joi.string().required().allow('').allow(null),
+        streetAddr1: Joi.string().required().allow('').allow(null),
+        city: Joi.string().required().allow('').allow(null),
+        stateCode: Joi.string().required().allow('').allow(null),
+        zip: Joi.string().required().allow('').allow(null),
+        countryCode: Joi.string().allow('').allow(null),
+        streetAddr2: Joi.string().allow('').allow(null)
       }).unknown(true))
     }).unknown(true).required()
   }).required()
@@ -179,19 +179,19 @@ updateProfile.schema = {
       lastName: Joi.string().allow(''),
       email: Joi.string().email().required(),
       handle: Joi.string().required(),
-      otherLangName: Joi.string().allow(''),
-      description: Joi.string().allow(''),
+      otherLangName: Joi.string().allow('').allow(null),
+      description: Joi.string().allow('').allow(null),
       homeCountryCode: Joi.string().allow('').allow(null),
-      competitionCountryCode: Joi.string().allow(''),
+      competitionCountryCode: Joi.string().allow('').allow(null),
       photoURL: Joi.string().allow(''),
       addresses: Joi.array().items(Joi.object({
-        type: Joi.string().required().allow(''),
-        streetAddr1: Joi.string().required().allow(''),
-        city: Joi.string().required().allow(''),
-        stateCode: Joi.string().required().allow(''),
-        zip: Joi.string().required().allow(''),
-        countryCode: Joi.string().allow(''),
-        streetAddr2: Joi.string().allow('')
+        type: Joi.string().required().allow('').allow(null),
+        streetAddr1: Joi.string().required().allow('').allow(null),
+        city: Joi.string().required().allow('').allow(null),
+        stateCode: Joi.string().required().allow('').allow(null),
+        zip: Joi.string().required().allow('').allow(null),
+        countryCode: Joi.string().allow('').allow(null),
+        streetAddr2: Joi.string().allow('').allow(null)
       }).unknown(true))
     }).unknown(true).required()
   }).required()
