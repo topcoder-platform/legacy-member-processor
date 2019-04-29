@@ -38,12 +38,15 @@ const dataHandler = async (messageSet, topic, partition) => Promise.each(message
   try {
     switch (topic) {
       case config.CREATE_PROFILE_TOPIC:
+        logger.info("========>> Topic - createProfile")
         await ProcessorService.createProfile(messageJSON)
         break
       case config.UPDATE_PROFILE_TOPIC:
+        logger.info("========>> Topic - updateProfile")
         await ProcessorService.updateProfile(messageJSON)
         break
       case config.UPDATE_PHOTO_TOPIC:
+        logger.info("========>> Topic - updatePhoto")
         await ProcessorService.updatePhoto(messageJSON)
         break
       default:
