@@ -12,15 +12,20 @@ const { prepare, wrapTransaction } = require('../common/helper')
  * @param {Object} message the message
  */
 async function createProfile (message) {
+  logger.info(`Method - createProfile`)
   await wrapTransaction(async (connection) => {
     const handle = _.get(message.payload, 'handle') || _.get(message.payload, 'userHandle')
+    logger.info("Found handle - " + handle)
     if (handle) {
       const userCount = await connection.queryAsync("select count(*) from user where upper(handle) = upper('" + handle + "')")
+      logger.info("User Count - " + userCount)
       if (userCount == 0) {
         // create user data in common_oltp:user
+        logger.info("Method - createUserProfile")
         await createUserProfile(message.payload, connection)
 
         // create code data in informixoltp:coder
+        logger.info("Method - createCoderProfile")
         await createCoderProfile(message.payload, connection)
       }
     }
@@ -84,6 +89,9 @@ async function createUserProfile (payload, connection) {
 
   const createUserStmt = await prepare(connection, `insert into user (${fields.join(', ')}) values (${values.join(', ')})`)
 
+  logger.info("createUserStmt - " + `insert into user (${fields.join(', ')}) values (${values.join(', ')})`)
+  logger.info("normalizedPayload - " + normalizedPayload)
+
   // Execute the statement
   await createUserStmt.executeAsync(Object.values(normalizedPayload))
 
@@ -91,6 +99,10 @@ async function createUserProfile (payload, connection) {
   const insertEmailStmt = await prepare(connection,
     'insert into email(user_id, email_id, email_type_id, address, create_date, modify_date, primary_ind, status_id)' +
     ' values(?, sequence_email_seq.nextval, 1, ?, current, current, 1, 1)')
+
+  logger.info("insertEmailStmt - " + 'insert into email(user_id, email_id, email_type_id, address, create_date, modify_date, primary_ind, status_id)' +
+  ' values(?, sequence_email_seq.nextval, 1, ?, current, current, 1, 1)')
+  logger.info("normalizedPayload - " + userId + " / " + email)
 
   await insertEmailStmt.executeAsync([userId, email])
 
@@ -119,6 +131,7 @@ async function createCoderProfile (payload, connection) {
       homeCountryCode = homeCountryCodeArray[0].country_code
     }
   }
+  logger.info("homeCountryCode - " + homeCountryCode)
 
   if (competitionCountryIsoAplpha3Code) {
     const competitionCountryCodeArray = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + competitionCountryIsoAplpha3Code + "')")
@@ -126,6 +139,7 @@ async function createCoderProfile (payload, connection) {
       competitionCountryCode = competitionCountryCodeArray[0].country_code
     }
   }
+  logger.info("competitionCountryCode - " + competitionCountryCode)
   
   const rawPayload = {
     coder_id: userId,
@@ -141,6 +155,9 @@ async function createCoderProfile (payload, connection) {
   const values = ['current', 'current', 1].concat(_.fill(Array(count), '?'))
 
   const createCoderDataStmt = await prepare(connection, `insert into informixoltp:coder(${fields.join(', ')}) values(${values.join(',')})`)
+
+  logger.info("createCoderDataStmt - " + `insert into informixoltp:coder(${fields.join(', ')}) values(${values.join(',')})`)
+  logger.info("normalizedPayload - " + normalizedPayload)
 
   // Create the coder data
   await createCoderDataStmt.executeAsync(Object.values(normalizedPayload))
@@ -159,9 +176,11 @@ async function updateProfile (message) {
     // check if the user exists in the DB
     if (await ensureUserExist(message, connection)) {
       // update user data in common_oltp:user
+      logger.info("updateUserProfile - ")
       await updateUserProfile(message.payload, connection)
 
       // create code data in informixoltp:coder
+      logger.info("updateCoderProfile - ")
       await updateCoderProfile(message.payload, connection)
     }
   })
@@ -235,6 +254,9 @@ async function updateUserProfile (payload, connection) {
   const updateStatements = keys.map(key => `${key} = '${normalizedPayload[key]}'`).join(', ')
 
   const updateUserQuery = `update user set ${updateStatements} where user_id = ${userId}`
+
+  logger.info("updateUserQuery - " + updateUserQuery)
+
   await connection.queryAsync(updateUserQuery)
 }
 
@@ -260,6 +282,7 @@ async function updateCoderProfile (payload, connection) {
       homeCountryCode = homeCountryCodeArray[0].country_code
     }
   }
+  logger.info("homeCountryCode - " + homeCountryCode)
 
   if (competitionCountryIsoAplpha3Code) {
     const competitionCountryCodeArray = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + competitionCountryIsoAplpha3Code + "')")
@@ -267,6 +290,7 @@ async function updateCoderProfile (payload, connection) {
       competitionCountryCode = competitionCountryCodeArray[0].country_code
     }
   }
+  logger.info("competitionCountryCode - " + competitionCountryCode)
   
   // prepare the query for updating the user in the database
   // as per Topcoder policy, the handle cannot be updated, hence it is removed from updated columns
@@ -288,6 +312,7 @@ async function updateCoderProfile (payload, connection) {
 
   const updateCoderQuery = `update informixoltp:coder set ${updateStatements} where coder_id = ${userId}`
 
+  logger.info("updateCoderQuery - " + updateCoderQuery)
   await connection.queryAsync(updateCoderQuery)
 
   if (photoURL) {
@@ -348,11 +373,14 @@ async function updateCoderPhoto (coderId, photoUrl, connection) {
     'select image_id id from informixoltp:coder_image_xref where ' +
     'coder_id= ' + coderId + ' and display_flag=1'
   )
+  logger.info("existingImg - " + existingImg)
 
   if (existingImg.length === 0) { // The coder does not have an existing image, we insert a new one
     // create the coder image data in the database.
     await createCoderImage(coderId, photoUrl, connection)
   } else { // The coder already have an existing image, we only update the image link
+    logger.info("UpdateImg - " + "update informixoltp:image set link='" + photoUrl + "' " +
+    'where image_id=' + existingImg[0].id)
     await connection.queryAsync("update informixoltp:image set link='" + photoUrl + "' " +
                          'where image_id=' + existingImg[0].id)
   }
@@ -381,16 +409,25 @@ async function createCoderImage (coderId, photoUrl, connection) {
   const imgIdRow = await connection.queryAsync('select max(image_id) max_id from informixoltp:image')
   const imageId = imgIdRow[0].max_id == null ? 1000 : Number(imgIdRow[0].max_id) + 1
 
+  logger.info("imgIdRow - " + imgIdRow)
+  logger.info("imageId - " + imageId)
+
   // prepare the statement for image insert
   const insertImgStmt = await prepare(connection,
     'insert into informixoltp:image(image_id, image_type_id, link, modify_date) values(?, 1, ?, current)')
 
+  logger.info("insertImgStmt - " + 'insert into informixoltp:image(image_id, image_type_id, link, modify_date) values(?, 1, ?, current)')
+  logger.info("Payload - " + imageId + " / " + photoUrl)
   // insert the image
   await insertImgStmt.executeAsync([imageId, photoUrl])
 
   // associate the image to the coder profile
   const createCoderImgStmt = await prepare(connection,
     'insert into informixoltp:coder_image_xref(coder_id, image_id, display_flag, modify_date) values(?, ?, 1, current)')
+
+  logger.info("createCoderImgStmt - " + 'insert into informixoltp:coder_image_xref(coder_id, image_id, display_flag, modify_date) values(?, ?, 1, current)')
+  logger.info("Payload - " + coderId + " / " + imageId)
+
   await createCoderImgStmt.executeAsync([coderId, imageId])
 }
 
@@ -408,6 +445,7 @@ async function updateUserEmail (userId, newEmail, connection) {
   const updateEmailQuery = "update email set address = '" + newEmail + "' " +
                            'where user_id = ' + userId + ' and email_type_id = 1 and primary_ind = 1 ' +
                            'and status_id =1'
+  logger.info("updateEmailQuery - " + updateEmailQuery)
   await connection.queryAsync(updateEmailQuery)
 }
 
@@ -420,6 +458,7 @@ async function createUserAddresses (payload, connection) {
   // iterate over the user addresses and create them in the db
   const userId = _.get(payload, 'userId')
   const createUserAddrStmt = await prepare(connection, 'insert into user_address_xref(user_id, address_id) values(?, ?)')
+
   for (let addr of _.get(payload, 'addresses', [])) {
     const rawPayload = Object.assign({
       address1: _.get(addr, 'streetAddr1'),
@@ -438,17 +477,29 @@ async function createUserAddresses (payload, connection) {
 
     // Insert the new user addresses into the database.
     const query = `insert into address(${fields.join(', ')}) values(${values.join(', ')})`
+
     const insertAddressStmt = await prepare(connection, query)
 
     // Get the address type id from the database.
     const addrTypeRow = await connection.queryAsync(`select address_type_id from address_type_lu where upper(address_type_desc) = '${addr.type}'`)
 
+    logger.info("addrTypeRow - " + addrTypeRow)
+
     // Get the address sequence next value to be used as address id.
     const addrIdRow = await connection.queryAsync('select first 1 sequence_address_seq.nextval from address')
 
+    logger.info("addrIdRow - " + addrIdRow)
+
     // insert the address into db
     const values_ = [addrIdRow[0].nextval, addrTypeRow[0].address_type_id].concat(Object.values(normalizedPayload))
+
+    logger.info("query - " + query)
+    logger.info("values_ - " + values_)
+
     await insertAddressStmt.executeAsync(values_)
+
+    logger.info("createUserAddrStmt - " + 'insert into user_address_xref(user_id, address_id) values(?, ?)')
+    logger.info("userId - " + userId + " / " + addrIdRow[0].nextval)
 
     // create the relationship between the user and the address
     await createUserAddrStmt.executeAsync([userId, addrIdRow[0].nextval])
@@ -465,15 +516,21 @@ async function updateUserAddresses (payload, connection) {
   // get and save the ids of the existing user addresses
   const userExistingAddrsIds = await connection.queryAsync(
     'select * from user_address_xref where user_id = ' + _.get(payload, 'userId'))
+  logger.info("userExistingAddrsIds - " + userExistingAddrsIds)
   // Delete all user addresses references
   const deleteUserAddrsStmt = await prepare(connection,
     'delete from user_address_xref where user_id = ?')
+  logger.info("deleteUserAddrsStmt - " + deleteUserAddrsStmt)
+  logger.info("userId - " + _.get(payload, 'userId'))
   deleteUserAddrsStmt.execute([_.get(payload, 'userId')])
+
 
   // cleanup the addresses from the address table
   const cleanupAddrsStmt = await prepare(connection,
     'delete from address where address_id = ?')
+  logger.info("address_id - " + 'delete from address where address_id = ?')
   for (let addr of userExistingAddrsIds) {
+    logger.info("address_id - " + addr.address_id)
     await cleanupAddrsStmt.executeAsync([addr.address_id])
   }
 
