@@ -7,8 +7,6 @@ const config = require('config')
 const logger = require('../common/logger')
 const { prepare, wrapTransaction } = require('../common/helper')
 
-const lockModeWait = "SET LOCK MODE TO WAIT; "
-
 /**
  * Create user profile in Informix database
  * @param {Object} message the message
@@ -19,7 +17,8 @@ async function createProfile (message) {
     const handle = _.get(message.payload, 'handle') || _.get(message.payload, 'userHandle')
     logger.info("Found handle - " + handle)
     if (handle) {
-      const userCount = await connection.queryAsync(lockModeWait + "select count(*) from user where upper(handle) = upper('" + handle + "')")
+      await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+      const userCount = await connection.queryAsync("select count(*) from user where upper(handle) = upper('" + handle + "')")
       logger.info("User Count - " + userCount)
       if (userCount == 0) {
         // create user data in common_oltp:user
@@ -89,7 +88,8 @@ async function createUserProfile (payload, connection) {
   const fields = ['create_date'].concat(keys)
   const values = ['current'].concat(_.fill(Array(count), '?'))
 
-  const createUserStmt = await prepare(connection, lockModeWait + `insert into user (${fields.join(', ')}) values (${values.join(', ')})`)
+  await prepare(connection, "SET LOCK MODE TO WAIT 60;")
+  const createUserStmt = await prepare(connection, `insert into user (${fields.join(', ')}) values (${values.join(', ')})`)
 
   logger.info("createUserStmt - " + `insert into user (${fields.join(', ')}) values (${values.join(', ')})`)
   logger.info("normalizedPayload - " + normalizedPayload)
@@ -98,8 +98,8 @@ async function createUserProfile (payload, connection) {
   await createUserStmt.executeAsync(Object.values(normalizedPayload))
 
   // create the user email entry in the DB
-  const insertEmailStmt = await prepare(connection,
-    lockModeWait + 'insert into email(user_id, email_id, email_type_id, address, create_date, modify_date, primary_ind, status_id)' +
+  await prepare(connection, "SET LOCK MODE TO WAIT 60;")
+  const insertEmailStmt = await prepare(connection, 'insert into email(user_id, email_id, email_type_id, address, create_date, modify_date, primary_ind, status_id)' +
     ' values(?, sequence_email_seq.nextval, 1, ?, current, current, 1, 1)')
 
   logger.info("insertEmailStmt - " + 'insert into email(user_id, email_id, email_type_id, address, create_date, modify_date, primary_ind, status_id)' +
@@ -128,7 +128,8 @@ async function createCoderProfile (payload, connection) {
   var competitionCountryCode;
 
   if (homeCountryIsoAplpha3Code) {
-    const homeCountryCodeArray = await connection.queryAsync(lockModeWait + "select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + homeCountryIsoAplpha3Code + "')")
+    await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+    const homeCountryCodeArray = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + homeCountryIsoAplpha3Code + "')")
     if (homeCountryCodeArray && homeCountryCodeArray.length > 0) {
       homeCountryCode = homeCountryCodeArray[0].country_code
     }
@@ -136,7 +137,8 @@ async function createCoderProfile (payload, connection) {
   logger.info("homeCountryCode - " + homeCountryCode)
 
   if (competitionCountryIsoAplpha3Code) {
-    const competitionCountryCodeArray = await connection.queryAsync(lockModeWait + "select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + competitionCountryIsoAplpha3Code + "')")
+    await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+    const competitionCountryCodeArray = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + competitionCountryIsoAplpha3Code + "')")
     if (competitionCountryCodeArray && competitionCountryCodeArray.length > 0) {
       competitionCountryCode = competitionCountryCodeArray[0].country_code
     }
@@ -156,7 +158,8 @@ async function createCoderProfile (payload, connection) {
   const fields = ['member_since', 'modify_date', 'display_quote'].concat(keys)
   const values = ['current', 'current', 1].concat(_.fill(Array(count), '?'))
 
-  const createCoderDataStmt = await prepare(connection, lockModeWait + `insert into informixoltp:coder(${fields.join(', ')}) values(${values.join(',')})`)
+  await prepare(connection, "SET LOCK MODE TO WAIT 60;")
+  const createCoderDataStmt = await prepare(connection, `insert into informixoltp:coder(${fields.join(', ')}) values(${values.join(',')})`)
 
   logger.info("createCoderDataStmt - " + `insert into informixoltp:coder(${fields.join(', ')}) values(${values.join(',')})`)
   logger.info("normalizedPayload - " + normalizedPayload)
@@ -255,10 +258,11 @@ async function updateUserProfile (payload, connection) {
 
   const updateStatements = keys.map(key => `${key} = '${normalizedPayload[key]}'`).join(', ')
 
-  const updateUserQuery = lockModeWait + `update user set ${updateStatements} where user_id = ${userId}`
+  const updateUserQuery = `update user set ${updateStatements} where user_id = ${userId}`
 
   logger.info("updateUserQuery - " + updateUserQuery)
 
+  await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
   await connection.queryAsync(updateUserQuery)
 }
 
@@ -279,7 +283,8 @@ async function updateCoderProfile (payload, connection) {
   var competitionCountryCode;
 
   if (homeCountryIsoAplpha3Code) {
-    const homeCountryCodeArray = await connection.queryAsync(lockModeWait + "select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + homeCountryIsoAplpha3Code + "')")
+    await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+    const homeCountryCodeArray = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + homeCountryIsoAplpha3Code + "')")
     if (homeCountryCodeArray && homeCountryCodeArray.length > 0) {
       homeCountryCode = homeCountryCodeArray[0].country_code
     }
@@ -287,7 +292,8 @@ async function updateCoderProfile (payload, connection) {
   logger.info("homeCountryCode - " + homeCountryCode)
 
   if (competitionCountryIsoAplpha3Code) {
-    const competitionCountryCodeArray = await connection.queryAsync(lockModeWait + "select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + competitionCountryIsoAplpha3Code + "')")
+    await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+    const competitionCountryCodeArray = await connection.queryAsync("select country_code from informixoltp:country where upper(iso_alpha3_code) = upper('" + competitionCountryIsoAplpha3Code + "')")
     if (competitionCountryCodeArray && competitionCountryCodeArray.length > 0) {
       competitionCountryCode = competitionCountryCodeArray[0].country_code
     }
@@ -312,9 +318,10 @@ async function updateCoderProfile (payload, connection) {
 
   const updateStatements = keys.map(key => `${key} = '${normalizedPayload[key]}'`).join(', ')
 
-  const updateCoderQuery = lockModeWait + `update informixoltp:coder set ${updateStatements} where coder_id = ${userId}`
+  const updateCoderQuery = `update informixoltp:coder set ${updateStatements} where coder_id = ${userId}`
 
   logger.info("updateCoderQuery - " + updateCoderQuery)
+  await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
   await connection.queryAsync(updateCoderQuery)
 
   if (photoURL) {
@@ -371,8 +378,8 @@ async function ensureUserExist (message, connection) {
  */
 async function updateCoderPhoto (coderId, photoUrl, connection) {
   // get the id of the existing image
-  const existingImg = await connection.queryAsync(
-    lockModeWait + 'select image_id id from informixoltp:coder_image_xref where ' +
+  await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+  const existingImg = await connection.queryAsync('select image_id id from informixoltp:coder_image_xref where ' +
     'coder_id= ' + coderId + ' and display_flag=1'
   )
   logger.info("existingImg - " + existingImg)
@@ -383,7 +390,8 @@ async function updateCoderPhoto (coderId, photoUrl, connection) {
   } else { // The coder already have an existing image, we only update the image link
     logger.info("UpdateImg - " + "update informixoltp:image set link='" + photoUrl + "' " +
     'where image_id=' + existingImg[0].id)
-    await connection.queryAsync(lockModeWait + "update informixoltp:image set link='" + photoUrl + "' " + 'where image_id=' + existingImg[0].id)
+    await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+    await connection.queryAsync("update informixoltp:image set link='" + photoUrl + "' " + 'where image_id=' + existingImg[0].id)
   }
 }
 
@@ -407,15 +415,16 @@ const getStatus = (payload) => {
 async function createCoderImage (coderId, photoUrl, connection) {
   // create the coder image data in the database.
   // get the max image id from the DB
-  const imgIdRow = await connection.queryAsync(lockModeWait + 'select max(image_id) max_id from informixoltp:image')
+  await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+  const imgIdRow = await connection.queryAsync('select max(image_id) max_id from informixoltp:image')
   const imageId = imgIdRow[0].max_id == null ? 1000 : Number(imgIdRow[0].max_id) + 1
 
   logger.info("imgIdRow - " + imgIdRow)
   logger.info("imageId - " + imageId)
 
   // prepare the statement for image insert
-  const insertImgStmt = await prepare(connection,
-    lockModeWait + 'insert into informixoltp:image(image_id, image_type_id, link, modify_date) values(?, 1, ?, current)')
+  await prepare(connection, "SET LOCK MODE TO WAIT 60;")
+  const insertImgStmt = await prepare(connection, 'insert into informixoltp:image(image_id, image_type_id, link, modify_date) values(?, 1, ?, current)')
 
   logger.info("insertImgStmt - " + 'insert into informixoltp:image(image_id, image_type_id, link, modify_date) values(?, 1, ?, current)')
   logger.info("Payload - " + imageId + " / " + photoUrl)
@@ -423,8 +432,8 @@ async function createCoderImage (coderId, photoUrl, connection) {
   await insertImgStmt.executeAsync([imageId, photoUrl])
 
   // associate the image to the coder profile
-  const createCoderImgStmt = await prepare(connection,
-    lockModeWait + 'insert into informixoltp:coder_image_xref(coder_id, image_id, display_flag, modify_date) values(?, ?, 1, current)')
+  await prepare(connection, "SET LOCK MODE TO WAIT 60;")
+  const createCoderImgStmt = await prepare(connection, 'insert into informixoltp:coder_image_xref(coder_id, image_id, display_flag, modify_date) values(?, ?, 1, current)')
 
   logger.info("createCoderImgStmt - " + 'insert into informixoltp:coder_image_xref(coder_id, image_id, display_flag, modify_date) values(?, ?, 1, current)')
   logger.info("Payload - " + coderId + " / " + imageId)
@@ -443,10 +452,11 @@ async function updateUserEmail (userId, newEmail, connection) {
     logger.error('email is undefined')
     return
   }
-  const updateEmailQuery = lockModeWait + "update email set address = '" + newEmail + "' " +
+  const updateEmailQuery = "update email set address = '" + newEmail + "' " +
                            'where user_id = ' + userId + ' and email_type_id = 1 and primary_ind = 1 ' +
                            'and status_id =1'
   logger.info("updateEmailQuery - " + updateEmailQuery)
+  await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
   await connection.queryAsync(updateEmailQuery)
 }
 
@@ -458,7 +468,8 @@ async function updateUserEmail (userId, newEmail, connection) {
 async function createUserAddresses (payload, connection) {
   // iterate over the user addresses and create them in the db
   const userId = _.get(payload, 'userId')
-  const createUserAddrStmt = await prepare(connection, lockModeWait + 'insert into user_address_xref(user_id, address_id) values(?, ?)')
+  await prepare(connection, "SET LOCK MODE TO WAIT 60;")
+  const createUserAddrStmt = await prepare(connection, 'insert into user_address_xref(user_id, address_id) values(?, ?)')
 
   for (let addr of _.get(payload, 'addresses', [])) {
     const rawPayload = Object.assign({
@@ -477,17 +488,20 @@ async function createUserAddresses (payload, connection) {
     const values = ['current', 'current', '?', '?'].concat(_.fill(Array(count), '?'))
 
     // Insert the new user addresses into the database.
-    const query = lockModeWait + `insert into address(${fields.join(', ')}) values(${values.join(', ')})`
+    const query = `insert into address(${fields.join(', ')}) values(${values.join(', ')})`
 
+    await prepare(connection, "SET LOCK MODE TO WAIT 60;")
     const insertAddressStmt = await prepare(connection, query)
 
     // Get the address type id from the database.
-    const addrTypeRow = await connection.queryAsync(lockModeWait + `select address_type_id from address_type_lu where upper(address_type_desc) = '${addr.type}'`)
+    await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+    const addrTypeRow = await connection.queryAsync(`select address_type_id from address_type_lu where upper(address_type_desc) = '${addr.type}'`)
 
     logger.info("addrTypeRow - " + JSON.stringify(addrTypeRow))
 
     // Get the address sequence next value to be used as address id.
-    const addrIdRow = await connection.queryAsync(lockModeWait + 'select first 1 sequence_address_seq.nextval from address')
+    await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+    const addrIdRow = await connection.queryAsync('select first 1 sequence_address_seq.nextval from address')
 
     logger.info("addrIdRow - " + JSON.stringify(addrIdRow))
 
@@ -515,20 +529,20 @@ async function createUserAddresses (payload, connection) {
 async function updateUserAddresses (payload, connection) {
   // cleanup the existing user addresses
   // get and save the ids of the existing user addresses
-  const userExistingAddrsIds = await connection.queryAsync(
-    lockModeWait + 'select * from user_address_xref where user_id = ' + _.get(payload, 'userId'))
+  await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+  const userExistingAddrsIds = await connection.queryAsync('select * from user_address_xref where user_id = ' + _.get(payload, 'userId'))
   logger.info("userExistingAddrsIds - " + userExistingAddrsIds)
   // Delete all user addresses references
-  const deleteUserAddrsStmt = await prepare(connection,
-    lockModeWait + 'delete from user_address_xref where user_id = ?')
+  await prepare(connection, "SET LOCK MODE TO WAIT 60;")
+  const deleteUserAddrsStmt = await prepare(connection, 'delete from user_address_xref where user_id = ?')
   logger.info("deleteUserAddrsStmt - " + deleteUserAddrsStmt)
   logger.info("userId - " + _.get(payload, 'userId'))
   deleteUserAddrsStmt.execute([_.get(payload, 'userId')])
 
 
   // cleanup the addresses from the address table
-  const cleanupAddrsStmt = await prepare(connection,
-    lockModeWait + 'delete from address where address_id = ?')
+  await prepare(connection, "SET LOCK MODE TO WAIT 60;")
+  const cleanupAddrsStmt = await prepare(connection, 'delete from address where address_id = ?')
   logger.info("address_id - " + 'delete from address where address_id = ?')
   for (let addr of userExistingAddrsIds) {
     logger.info("address_id - " + addr.address_id)
@@ -546,7 +560,8 @@ async function updateUserAddresses (payload, connection) {
  * @param {Object} connection The Informix database connection
  */
 async function getUserCountById (userId, connection) {
-  return connection.queryAsync(lockModeWait + 'select count(*) count from user where user_id =' + userId)
+  await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+  return connection.queryAsync('select count(*) count from user where user_id =' + userId)
 }
 
 /**
@@ -555,7 +570,8 @@ async function getUserCountById (userId, connection) {
  * @param {*} connection The connection to Informix database.
  */
 async function getUserByHandle (handle, connection) {
-  return connection.queryAsync(lockModeWait + "select * from user where handle='" + handle + "'")
+  await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+  return connection.queryAsync("select * from user where handle='" + handle + "'")
 }
 
 // Exports
