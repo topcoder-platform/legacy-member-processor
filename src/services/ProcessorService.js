@@ -382,7 +382,7 @@ async function updateCoderPhoto (coderId, photoUrl, connection) {
   const existingImg = await connection.queryAsync('select image_id id from informixoltp:coder_image_xref where ' +
     'coder_id= ' + coderId + ' and display_flag=1'
   )
-  logger.info("existingImg - " + existingImg)
+  logger.info("existingImg - " + JSON.stringify(existingImg))
 
   if (existingImg.length === 0) { // The coder does not have an existing image, we insert a new one
     // create the coder image data in the database.
@@ -531,7 +531,7 @@ async function updateUserAddresses (payload, connection) {
   // get and save the ids of the existing user addresses
   await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
   const userExistingAddrsIds = await connection.queryAsync('select * from user_address_xref where user_id = ' + _.get(payload, 'userId'))
-  logger.info("userExistingAddrsIds - " + userExistingAddrsIds)
+  logger.info("userExistingAddrsIds - " + JSON.stringify(userExistingAddrsIds))
   // Delete all user addresses references
   await prepare(connection, "SET LOCK MODE TO WAIT 60;")
   const deleteUserAddrsStmt = await prepare(connection, 'delete from user_address_xref where user_id = ?')
