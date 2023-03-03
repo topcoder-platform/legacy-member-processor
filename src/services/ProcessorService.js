@@ -207,7 +207,7 @@ updateProfile.schema = {
       description: Joi.string().allow('').allow(null),
       homeCountryCode: Joi.string().allow('').allow(null),
       competitionCountryCode: Joi.string().allow('').allow(null),
-      photoURL: Joi.string().allow(''),
+      photoURL: Joi.string().allow('').allow(null),
       addresses: Joi.array().items(Joi.object({
         type: Joi.string().required().allow('').allow(null),
         streetAddr1: Joi.string().required().allow('').allow(null),
