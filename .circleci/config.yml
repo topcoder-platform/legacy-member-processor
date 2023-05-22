@@ -4,7 +4,7 @@ jobs:
   # Build & Deploy against development backend
   "build-dev":
     docker:
-      - image: circleci/python:2.7-stretch-browsers
+      - image: cimg/python:3.11.0-browsers
     steps:
       # Initialization.
       - checkout
@@ -12,9 +12,11 @@ jobs:
       - run:
           name: Installation of build dependencies.
           command: |
+            sudo apt update
             sudo apt install jq
-            sudo pip install awscli --upgrade
-            sudo pip install docker-compose
+            sudo apt install python3-pip
+            sudo pip3 install awscli --upgrade
+            sudo pip3 install docker-compose
 
       - run:
           name: Executing build.
@@ -24,7 +26,7 @@ jobs:
       - deploy:
           name : Running Masterscript
           command: |
-            git clone --branch v1.4.14 https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
+            git clone --branch v1.4.15 https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
             cp ./../buildscript/master_deploy.sh .
             cp ./../buildscript/buildenv.sh .
             cp ./../buildscript/awsconfiguration.sh .
@@ -36,7 +38,7 @@ jobs:
               
   "build-prod":
     docker:
-      - image: circleci/python:2.7-stretch-browsers
+      - image: cimg/python:3.11.0-browsers
     steps:
       # Initialization.
       - checkout
@@ -44,9 +46,11 @@ jobs:
       - run:
           name: Installation of build dependencies.
           command: |
+            sudo apt update
             sudo apt install jq
-            sudo pip install awscli --upgrade
-            sudo pip install docker-compose
+            sudo apt install python3-pip
+            sudo pip3 install awscli --upgrade
+            sudo pip3 install docker-compose
 
       - run:
           name: Executing build .
@@ -57,7 +61,7 @@ jobs:
           name : Running Masterscript
           command: |
           
-            git clone --branch v1.4.14 https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
+            git clone --branch v1.4.15 https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
             cp ./../buildscript/master_deploy.sh .
             cp ./../buildscript/buildenv.sh .
             cp ./../buildscript/awsconfiguration.sh .
