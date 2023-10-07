@@ -35,12 +35,13 @@ const dataHandler = async (messageSet, topic, partition) => Promise.each(message
     // ignore the message
     return
   }
+  if (messageJSON.originator === 'tc-member-account-processor') {
+    logger.error('Ignore message originator: tc-member-account-processor')
+    // ignore the message
+    return
+  }
   try {
     switch (topic) {
-      case config.CREATE_PROFILE_TOPIC:
-        logger.info("========>> Topic - createProfile")
-        await ProcessorService.createProfile(messageJSON)
-        break
       case config.UPDATE_PROFILE_TOPIC:
         logger.info("========>> Topic - updateProfile")
         await ProcessorService.updateProfile(messageJSON)
@@ -73,8 +74,7 @@ function check () {
   return connected
 }
 
-const topics = [config.CREATE_PROFILE_TOPIC, config.UPDATE_PROFILE_TOPIC,
-  config.UPDATE_PHOTO_TOPIC]
+const topics = [config.UPDATE_PROFILE_TOPIC, config.UPDATE_PHOTO_TOPIC]
 consumer
   .init([{
     subscriptions: topics,
