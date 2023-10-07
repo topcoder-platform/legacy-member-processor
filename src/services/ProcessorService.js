@@ -209,11 +209,10 @@ updateProfile.schema = {
       competitionCountryCode: Joi.string().allow('').allow(null),
       photoURL: Joi.string().allow('').allow(null),
       addresses: Joi.array().items(Joi.object({
-        type: Joi.string().required().allow('').allow(null),
-        streetAddr1: Joi.string().required().allow('').allow(null),
-        city: Joi.string().required().allow('').allow(null),
-        stateCode: Joi.string().required().allow('').allow(null),
-        zip: Joi.string().required().allow('').allow(null),
+        streetAddr1: Joi.string().allow('').allow(null),
+        city: Joi.string().allow('').allow(null),
+        stateCode: Joi.string().allow('').allow(null),
+        zip: Joi.string().allow('').allow(null),
         countryCode: Joi.string().allow('').allow(null),
         streetAddr2: Joi.string().allow('').allow(null)
       }).unknown(true))
@@ -493,12 +492,6 @@ async function createUserAddresses (payload, connection) {
     await prepare(connection, "SET LOCK MODE TO WAIT 60;")
     const insertAddressStmt = await prepare(connection, query)
 
-    // Get the address type id from the database.
-    await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
-    const addrTypeRow = await connection.queryAsync(`select address_type_id from address_type_lu where upper(address_type_desc) = '${addr.type}'`)
-
-    logger.info("addrTypeRow - " + JSON.stringify(addrTypeRow))
-
     // Get the address sequence next value to be used as address id.
     await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
     const addrIdRow = await connection.queryAsync('select first 1 sequence_address_seq.nextval from address')
@@ -506,7 +499,7 @@ async function createUserAddresses (payload, connection) {
     logger.info("addrIdRow - " + JSON.stringify(addrIdRow))
 
     // insert the address into db
-    const values_ = [addrIdRow[0].nextval, addrTypeRow[0].address_type_id].concat(Object.values(normalizedPayload))
+    const values_ = [addrIdRow[0].nextval, 2].concat(Object.values(normalizedPayload))
 
     logger.info("query - " + query)
     logger.info("values_ - " + values_)
