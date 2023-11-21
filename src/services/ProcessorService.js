@@ -244,7 +244,6 @@ async function updateUserProfile (payload, connection) {
   const rawPayload = {
     first_name: _.get(payload, 'firstName'),
     last_name: _.get(payload, 'lastName'),
-    status: getStatus(payload),
     name_in_another_language: _.get(payload, 'otherLangName')
   }
 
