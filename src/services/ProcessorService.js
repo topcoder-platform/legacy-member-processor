@@ -244,7 +244,6 @@ async function updateUserProfile (payload, connection) {
   const rawPayload = {
     first_name: _.get(payload, 'firstName'),
     last_name: _.get(payload, 'lastName'),
-    status: getStatus(payload),
     name_in_another_language: _.get(payload, 'otherLangName')
   }
 
@@ -401,7 +400,7 @@ async function updateCoderPhoto (coderId, photoUrl, connection) {
  */
 const getStatus = (payload) => {
   const { status } = payload
-  if (status) return status === 'ACTIVE' ? 'A' : 'I'
+  if (status) return status === 'ACTIVE' ? 'A' : status === 'UNVERIFIED' ? 'U' : 'I'
   return status
 }
 
