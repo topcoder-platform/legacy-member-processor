@@ -401,7 +401,7 @@ async function updateCoderPhoto (coderId, photoUrl, connection) {
  */
 const getStatus = (payload) => {
   const { status } = payload
-  if (status) return status === 'ACTIVE' ? 'A' : 'I'
+  if (status) return status === 'ACTIVE' ? 'A' : status === 'UNVERIFIED' ? 'U' : 'I'
   return status
 }
 
