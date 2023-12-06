@@ -232,7 +232,11 @@ async function updateUserProfile (payload, connection) {
 
   // update the user email entry in the DB
   if (email !== undefined) {
-    await updateUserEmail(userId, email, connection)
+    // Only update the email if it's different than what's in the DB already
+    const currentEmail = getEmailById(userId, connection)[0].email
+    if(email != currentEmail){
+      await updateUserEmail(userId, email, connection)
+    }
   }
 
   // if (addresses !== undefined) {
@@ -556,6 +560,19 @@ async function getUserCountById (userId, connection) {
   return connection.queryAsync('select count(*) count from user where user_id =' + userId)
 }
 
+/**
+ * Gets the user's current email address
+ * It is used to check if a user profile update event contains an updated email address to save
+ * or if the message can be ignored because the email address hasn't been updated.
+ *
+ * @param {String} userId  The user id to get the email address for
+ * @param {Object} connection The Informix database connection
+ */
+async function getEmailById (userId, connection) {
+  await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+  return connection.queryAsync('select address from email where user_id =' + userId + ' and email_type_id = 1 and primary_ind = 1 ' +
+  'and status_id =1')
+}
 /**
  * Gets the user identified by the given handle from Informix database.
  * @param {*} handle The user handle to search for.

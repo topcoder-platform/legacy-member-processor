@@ -80,7 +80,7 @@ workflows:
           context : org-global
           filters:
             branches:
-              only: [ "develop", "dev-circleci" ]
+              only: [ "develop", "dev-circleci", "hotfix-performance"]
       - "build-prod":
           context : org-global
           filters:
