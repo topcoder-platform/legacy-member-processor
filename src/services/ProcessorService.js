@@ -233,7 +233,8 @@ async function updateUserProfile (payload, connection) {
   // update the user email entry in the DB
   if (email !== undefined) {
     // Only update the email if it's different than what's in the DB already
-    const currentEmail = getEmailById(userId, connection)[0].email
+    const currentEmail = getEmailById(userId, connection)
+    logger.info("Found email", JSON.stringify(currentEmail,null,5))
     if(email != currentEmail){
       await updateUserEmail(userId, email, connection)
     }
