@@ -237,6 +237,9 @@ async function updateUserProfile (payload, connection) {
     if(email != currentEmail){
       await updateUserEmail(userId, email, connection)
     }
+    else{
+      logger.info(`Skipping update to ${userId} because email hasn't changed from ${email}`)
+    }
   }
 
   // if (addresses !== undefined) {
