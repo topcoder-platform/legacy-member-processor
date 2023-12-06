@@ -185,8 +185,8 @@ async function updateProfile (message) {
       await updateUserProfile(message.payload, connection)
 
       // create code data in informixoltp:coder
-      logger.info("updateCoderProfile - ")
-      await updateCoderProfile(message.payload, connection)
+      // logger.info("updateCoderProfile - ")
+      // await updateCoderProfile(message.payload, connection)
     }
   })
 }
@@ -235,33 +235,33 @@ async function updateUserProfile (payload, connection) {
     await updateUserEmail(userId, email, connection)
   }
 
-  if (addresses !== undefined) {
-    await updateUserAddresses(payload, connection)
-  }
+  // if (addresses !== undefined) {
+  //   await updateUserAddresses(payload, connection)
+  // }
 
   // prepare the query for updating the user in the database
   // as per Topcoder policy, the handle cannot be updated, hence it is removed from updated columns
-  const rawPayload = {
-    first_name: _.get(payload, 'firstName'),
-    last_name: _.get(payload, 'lastName'),
-    name_in_another_language: _.get(payload, 'otherLangName')
-  }
+  // const rawPayload = {
+  //   first_name: _.get(payload, 'firstName'),
+  //   last_name: _.get(payload, 'lastName'),
+  //   name_in_another_language: _.get(payload, 'otherLangName')
+  // }
 
-  const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
-  const keys = Object.keys(normalizedPayload)
-  if (keys.length === 0) {
-    logger.warn(`no valid payload`)
-    return
-  }
+  // const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
+  // const keys = Object.keys(normalizedPayload)
+  // if (keys.length === 0) {
+  //   logger.warn(`no valid payload`)
+  //   return
+  // }
 
-  const updateStatements = keys.map(key => `${key} = '${normalizedPayload[key]}'`).join(', ')
+  // const updateStatements = keys.map(key => `${key} = '${normalizedPayload[key]}'`).join(', ')
 
-  const updateUserQuery = `update user set ${updateStatements} where user_id = ${userId}`
+  // const updateUserQuery = `update user set ${updateStatements} where user_id = ${userId}`
 
-  logger.info("updateUserQuery - " + updateUserQuery)
+  // logger.info("updateUserQuery - " + updateUserQuery)
 
-  await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
-  await connection.queryAsync(updateUserQuery)
+  // await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+  // await connection.queryAsync(updateUserQuery)
 }
 
 /**
