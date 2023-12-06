@@ -233,7 +233,7 @@ async function updateUserProfile (payload, connection) {
   // update the user email entry in the DB
   if (email !== undefined) {
     // Only update the email if it's different than what's in the DB already
-    const currentEmail = getEmailById(userId, connection)
+    const currentEmail = await getEmailById(userId, connection)
     logger.info("Found email", JSON.stringify(currentEmail,null,5))
     if(email != currentEmail){
       await updateUserEmail(userId, email, connection)
@@ -575,8 +575,9 @@ async function getUserCountById (userId, connection) {
 async function getEmailById (userId, connection) {
   logger.info("Entering getEmailById")
   await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
-  return connection.queryAsync('select address from email where user_id =' + userId + ' and email_type_id = 1 and primary_ind = 1 ' +
-  'and status_id =1')
+  const query = `select address from email where user_id = ${userId} and email_type_id = 1 and primary_ind = 1 and status_id =1`
+  logger.info("Getting email via query:", query)
+  return connection.queryAsync(query)
 }
 /**
  * Gets the user identified by the given handle from Informix database.
