@@ -238,7 +238,7 @@ async function updateUserProfile (payload, connection) {
       await updateUserEmail(userId, email, connection)
     }
     else{
-      logger.info(`Skipping update to ${userId} because email hasn't changed from ${email}`)
+      logger.info(`Skipping update to ${userId} because email hasn't changed from ${currentEmail}`)
     }
   }
 
@@ -572,6 +572,7 @@ async function getUserCountById (userId, connection) {
  * @param {Object} connection The Informix database connection
  */
 async function getEmailById (userId, connection) {
+  logger.info("Entering getEmailById")
   await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
   return connection.queryAsync('select address from email where user_id =' + userId + ' and email_type_id = 1 and primary_ind = 1 ' +
   'and status_id =1')
