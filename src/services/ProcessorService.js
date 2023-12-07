@@ -183,10 +183,11 @@ async function updateProfile (message) {
       // update user data in common_oltp:user
       logger.info("updateUserProfile - ")
       await updateUserProfile(message.payload, connection)
-
+      // This block is commented out for performance reasons - we don't need to have this 
+      // data duplicated in Informix when v5 is the best place for this.
       // create code data in informixoltp:coder
-      logger.info("updateCoderProfile - ")
-      await updateCoderProfile(message.payload, connection)
+      // logger.info("updateCoderProfile - ")
+      // await updateCoderProfile(message.payload, connection)
     }
   })
 }
@@ -232,36 +233,52 @@ async function updateUserProfile (payload, connection) {
 
   // update the user email entry in the DB
   if (email !== undefined) {
-    await updateUserEmail(userId, email, connection)
-  }
+    // Only update the email if it's different than what's in the DB already
+    const currentEmailResult = await getEmailById(userId, connection)
 
-  if (addresses !== undefined) {
-    await updateUserAddresses(payload, connection)
+    logger.info("Query result:", JSON.stringify(currentEmailResult))
+    if(currentEmailResult != null && currentEmailResult.length > 0){
+      const currentEmail = currentEmailResult[0].address
+      logger.info("Found email for user ID:", userId, currentEmail)
+      if(email != currentEmail){
+        await updateUserEmail(userId, email, connection)
+      }
+      else{
+        logger.info(`Skipping update to ${userId} because email hasn't changed from ${currentEmail}`)
+      }
+    }
   }
+  // The blocks below are commented out for performance reasons.  We ran a script that generated too
+  // many messages, and each message was cauing the addresses to be recreated, and all users details to be
+  // updated, for every member, which caused Informix problems.
+
+  // if (addresses !== undefined) {
+  //   await updateUserAddresses(payload, connection)
+  // }
 
   // prepare the query for updating the user in the database
   // as per Topcoder policy, the handle cannot be updated, hence it is removed from updated columns
-  const rawPayload = {
-    first_name: _.get(payload, 'firstName'),
-    last_name: _.get(payload, 'lastName'),
-    name_in_another_language: _.get(payload, 'otherLangName')
-  }
+  // const rawPayload = {
+  //   first_name: _.get(payload, 'firstName'),
+  //   last_name: _.get(payload, 'lastName'),
+  //   name_in_another_language: _.get(payload, 'otherLangName')
+  // }
 
-  const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
-  const keys = Object.keys(normalizedPayload)
-  if (keys.length === 0) {
-    logger.warn(`no valid payload`)
-    return
-  }
+  // const normalizedPayload = _.omitBy(rawPayload, _.isUndefined)
+  // const keys = Object.keys(normalizedPayload)
+  // if (keys.length === 0) {
+  //   logger.warn(`no valid payload`)
+  //   return
+  // }
 
-  const updateStatements = keys.map(key => `${key} = '${normalizedPayload[key]}'`).join(', ')
+  // const updateStatements = keys.map(key => `${key} = '${normalizedPayload[key]}'`).join(', ')
 
-  const updateUserQuery = `update user set ${updateStatements} where user_id = ${userId}`
+  // const updateUserQuery = `update user set ${updateStatements} where user_id = ${userId}`
 
-  logger.info("updateUserQuery - " + updateUserQuery)
+  // logger.info("updateUserQuery - " + updateUserQuery)
 
-  await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
-  await connection.queryAsync(updateUserQuery)
+  // await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+  // await connection.queryAsync(updateUserQuery)
 }
 
 /**
@@ -556,6 +573,21 @@ async function getUserCountById (userId, connection) {
   return connection.queryAsync('select count(*) count from user where user_id =' + userId)
 }
 
+/**
+ * Gets the user's current email address
+ * It is used to check if a user profile update event contains an updated email address to save
+ * or if the message can be ignored because the email address hasn't been updated.
+ *
+ * @param {String} userId - The user id to get the email address for
+ * @param {Object} connection - The Informix database connection
+ */
+async function getEmailById (userId, connection) {
+  logger.info("Entering getEmailById")
+  await connection.queryAsync("SET LOCK MODE TO WAIT 60;")
+  const query = `select address from email where user_id = ${userId} and email_type_id = 1 and primary_ind = 1 and status_id =1`
+  logger.info("Getting email via query:", query)
+  return connection.queryAsync(query)
+}
 /**
  * Gets the user identified by the given handle from Informix database.
  * @param {*} handle The user handle to search for.
