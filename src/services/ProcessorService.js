@@ -183,7 +183,8 @@ async function updateProfile (message) {
       // update user data in common_oltp:user
       logger.info("updateUserProfile - ")
       await updateUserProfile(message.payload, connection)
-
+      // This block is commented out for performance reasons - we don't need to have this 
+      // data duplicated in Informix when v5 is the best place for this.
       // create code data in informixoltp:coder
       // logger.info("updateCoderProfile - ")
       // await updateCoderProfile(message.payload, connection)
@@ -236,7 +237,7 @@ async function updateUserProfile (payload, connection) {
     const currentEmailResult = await getEmailById(userId, connection)
 
     logger.info("Query result:", JSON.stringify(currentEmailResult))
-    if(currentEmailResult!=null && currentEmailResult.length > 0){
+    if(currentEmailResult != null && currentEmailResult.length > 0){
       const currentEmail = currentEmailResult[0].address
       logger.info("Found email for user ID:", userId, currentEmail)
       if(email != currentEmail){
@@ -247,6 +248,9 @@ async function updateUserProfile (payload, connection) {
       }
     }
   }
+  // The blocks below are commented out for performance reasons.  We ran a script that generated too
+  // many messages, and each message was cauing the addresses to be recreated, and all users details to be
+  // updated, for every member, which caused Informix problems.
 
   // if (addresses !== undefined) {
   //   await updateUserAddresses(payload, connection)
@@ -574,8 +578,8 @@ async function getUserCountById (userId, connection) {
  * It is used to check if a user profile update event contains an updated email address to save
  * or if the message can be ignored because the email address hasn't been updated.
  *
- * @param {String} userId  The user id to get the email address for
- * @param {Object} connection The Informix database connection
+ * @param {String} userId - The user id to get the email address for
+ * @param {Object} connection - The Informix database connection
  */
 async function getEmailById (userId, connection) {
   logger.info("Entering getEmailById")
