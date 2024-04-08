@@ -41,18 +41,18 @@ const dataHandler = async (messageSet, topic, partition) => Promise.each(message
     return
   }
   try {
-    switch (topic) {
-      case config.UPDATE_PROFILE_TOPIC:
-        logger.info("========>> Topic - updateProfile")
-        await ProcessorService.updateProfile(messageJSON)
-        break
-      case config.UPDATE_PHOTO_TOPIC:
-        logger.info("========>> Topic - updatePhoto")
-        await ProcessorService.updatePhoto(messageJSON)
-        break
-      default:
-        throw new Error(`Invalid topic: ${topic}`)
-    }
+    // switch (topic) {
+    //   case config.UPDATE_PROFILE_TOPIC:
+    //     logger.info("========>> Topic - updateProfile")
+    //     await ProcessorService.updateProfile(messageJSON)
+    //     break
+    //   case config.UPDATE_PHOTO_TOPIC:
+    //     logger.info("========>> Topic - updatePhoto")
+    //     await ProcessorService.updatePhoto(messageJSON)
+    //     break
+    //   default:
+    //     throw new Error(`Invalid topic: ${topic}`)
+    // }
     // only commit if no errors
     await consumer.commitOffset({ topic, partition, offset: m.offset })
     logger.debug('Successfully processed message')
