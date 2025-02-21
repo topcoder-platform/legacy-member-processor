@@ -34,7 +34,7 @@ jobs:
             source awsenvconf 
             ./buildenv.sh -e DEV -b legacy-member-processor_deployvar
             source buildenvvar
-            ./master_deploy.sh -d ECS -e DEV -t latest -s dev-global-appvar,dev-legacy-member-processor_appvar -i legacy-member-processor
+            ./master_deploy.sh -d ECS -e DEV -t latest -s dev-global-appvar,dev-legacy-member-processor_appvar -i legacy-member-processor -p FARGATE
               
   "build-prod":
     docker:
@@ -69,7 +69,7 @@ jobs:
             source awsenvconf 
             ./buildenv.sh -e PROD -b legacy-member-processor_deployvar
             source buildenvvar
-            ./master_deploy.sh -d ECS -e PROD -t latest -s prod-global-appvar,prod-legacy-member-processor_appvar -i legacy-member-processor
+            ./master_deploy.sh -d ECS -e PROD -t latest -s prod-global-appvar,prod-legacy-member-processor_appvar -i legacy-member-processor -p FARGATE
         
 workflows:
   version: 2
